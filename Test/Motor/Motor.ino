@@ -34,7 +34,7 @@ void stop() {
 
 void forwardLeft(int speed) { // for turning left
   // set speed of motor
-  MotorL->setSpeed(speed/2);
+  MotorL->setSpeed(speed/2);  
   MotorR->setSpeed(speed);
 
   // make motor move forward
