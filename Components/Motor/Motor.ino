@@ -5,8 +5,15 @@ class Motors
 public:
   // class field
   Adafruit_MotorShield MotorShield = Adafruit_MotorShield();
-  Adafruit_DCMotor *MotorL = MotorShield.getMotor(1);
-  Adafruit_DCMotor *MotorR = MotorShield.getMotor(2);
+  Adafruit_DCMotor *MotorL;
+  Adafruit_DCMotor *MotorR;
+
+  // constructor
+  Motors(int L, int R)
+  {
+    MotorL = MotorShield.getMotor(L);
+    MotorR = MotorShield.getMotor(R);
+  }
 
   // functions
   void begin()
@@ -82,7 +89,7 @@ public:
   }
 };
 
-Motors motors;
+Motors motors(1, 2);
 
 void setup()
 {
