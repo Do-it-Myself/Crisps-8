@@ -1,3 +1,13 @@
+#include <Servo.h>
+
+class Servos{
+private:
+  int servoPin;
+
+public:
+
+}
+
 void setup() {
   // put your setup code here, to run once:
 

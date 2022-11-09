@@ -2,14 +2,11 @@
 
 class Motors
 {
-private:
-  int L, R;
-  Adafruit_MotorShield MotorShield = Adafruit_MotorShield();
-
 public:
-  // constructor
-  Motors(int L, int R) : Adafruit_DCMotor *MotorL = MotorShield.getMotor(L);
-  Adafruit_DCMotor *MotorR = MotorShield.getMotor(R);
+  // class field
+  Adafruit_MotorShield MotorShield = Adafruit_MotorShield();
+  Adafruit_DCMotor *MotorL = MotorShield.getMotor(1);
+  Adafruit_DCMotor *MotorR = MotorShield.getMotor(2);
 
   // functions
   void begin()
@@ -85,12 +82,33 @@ public:
   }
 };
 
+Motors motors;
+
 void setup()
 {
-  // put your setup code here, to run once:
+  Serial.begin(9600);
+  motors.begin();
 }
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
+  Serial.println("Forward");
+  motors.forward(150);
+  delay(1000);
+
+  Serial.println("Backward");
+  motors.backward(150);
+  delay(1000);
+
+  Serial.println("Stop");
+  motors.stop();
+  delay(1000);
+
+  Serial.println("Forward left");
+  motors.forwardLeft(150);
+  delay(1000);
+
+  Serial.println("Forward right");
+  motors.forwardRight(150);
+  delay(1000);
 }
