@@ -1,5 +1,4 @@
 #include <HCSR04.h>
-#define distanceFromWall 5
 
 class Ultrasound
 {
@@ -29,15 +28,19 @@ public:
   }
 };
 
-Ultrasound ultrasound(2, 3);
+Ultrasound ultrasound(2,3);
 
-void setup()
-{
-  Serial.begin(9600);
+void tunnel() {
+  
 }
 
-void loop()
-{
-  Serial.println(ultrasound.dist());
-  Serial.println(ultrasound.distGreaterThan(distanceFromWall));
+
+void setup() {
+  // put your setup code here, to run once:
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
 }
