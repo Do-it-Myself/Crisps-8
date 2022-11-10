@@ -4,13 +4,11 @@
 class Ultrasound {
 public:
   // class field
-  HCSR04 hc;
+  HCSR04 hc;  
   
   // constructor
-  Ultrasound(int trig, int echo) {
-    hc(trig, echo);
-  } 
-  
+  Ultrasound(int trig, int echo): hc(trig, echo) {};
+
   // functions
   float dist() {
     return hc.dist();
@@ -33,6 +31,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.println( ultrasound.dist() );
-  delay(1000);
+  Serial.println(ultrasound.dist());
+  Serial.println(ultrasound.distGreaterThan(distanceFromWall));
 }
