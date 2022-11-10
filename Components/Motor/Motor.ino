@@ -1,4 +1,6 @@
 #include <Adafruit_MotorShield.h>
+#define SPEED 225
+#define TIME 3000
 
 class Motors
 {
@@ -100,22 +102,22 @@ void setup()
 void loop()
 {
   Serial.println("Forward");
-  motors.forward(150);
-  delay(1000);
+  motors.forward(SPEED);
+  delay(TIME);
 
   Serial.println("Backward");
-  motors.backward(150);
-  delay(1000);
+  motors.backward(SPEED);
+  delay(TIME);
 
   Serial.println("Stop");
   motors.stop();
-  delay(1000);
+  delay(TIME);
 
   Serial.println("Forward left");
-  motors.forwardLeft(150);
-  delay(1000);
+  motors.forwardLeft(SPEED);
+  delay(TIME);
 
   Serial.println("Forward right");
-  motors.forwardRight(150);
-  delay(1000);
+  motors.forwardRight(SPEED);
+  delay(TIME);
 }
