@@ -7,6 +7,7 @@ class LineFollower{
   int inputPin;
   int analog;
   public:
+  LineFollower() = default;
   LineFollower (int p) {
     inputPin = p;
     pinMode(p, INPUT);
@@ -24,36 +25,58 @@ class LineFollower{
 class Crisps{
   private:
   LineFollower lineFollowers[4];
+  Motors motors[2];
+  static const int maxSpeed = 255;
 
   public:
-  Crisps (int line1, int line2, int line3, int line4, int motor1, int motor2){
-    lineFollowers[0] = LineFollower(line1);
-    lineFollowers[1] = LineFollower(line1);
-    lineFollowers[2] = LineFollower(line1);
-    lineFollowers[3] = LineFollower(line1);
+  Crisps = default();
+  Crisps (int line0, int line1, int line2, int line3, int motor0, int motor1){
+    lineFollowers[0] = LineFollower(line1); //this is the line follower on the left for following the main line
+    lineFollowers[1] = LineFollower(line2); //this is the line follower on the right for following the main line
+    lineFollowers[2] = LineFollower(line3);
+    lineFollowers[3] = LineFollower(line4);
 
-  boolean* getLineData(){
-    static boolean r[4];
-    for(int i = 0; i<4; i++){
-      r[i] = lineFollowers[i].getLineData();
-    }
-    return r;
+    motors[0] = Motors(motor0);
+    motors[1] = Motors(motor1);
+
+  boolean getLineData(int sensor){
+    return lineFollowers[sensor].getLineData();
+  }
+  void setMotorSpeedForward(int motor, int speed){
+    motors[i].forward(speed)
+  }
+  void setMotorSpeedBackward(int motor, int speed){
+    motors[i].backward(speed)
+  }
+  void fullForward(){
+    setMotorSpeedForward(0, maxSpeed);
+    setMotorSpeedForward(1, maxSpeed);
+  }
+  void fullBackward(){
+    setMotorSpeedBackward(0, maxSpeed);
+    setMotorSpeedBackward(1, maxSpeed);
+  }
+  void stop(int motor){
+    motors[i].stop();
+  }
+  void followLine(){
+
   }
   }
+
 };
 
 class Motors{
 public:
   // class field
   Adafruit_MotorShield MotorShield = Adafruit_MotorShield();
-  Adafruit_DCMotor *MotorL;
-  Adafruit_DCMotor *MotorR;
+  Adafruit_DCMotor *Motor;
+
 
   // constructor
-  Motors(int L, int R)
+  Motors(int pin)
   {
-    MotorL = MotorShield.getMotor(L);
-    MotorR = MotorShield.getMotor(R);
+    Motor = MotorShield.getMotor(pin);
   }
 
   // functions
@@ -69,64 +92,31 @@ public:
     Serial.println("Motor Shield found.");
 
     // Initial configuration - turn on
-    MotorL->setSpeed(150);
-    MotorL->run(FORWARD);
-    MotorL->run(RELEASE);
+    Motor->setSpeed(150);
+    Motor->run(FORWARD);
+    Motor->run(RELEASE);
 
-    MotorR->setSpeed(150);
-    MotorR->run(FORWARD);
-    MotorR->run(RELEASE);
   }
 
   void forward(int speed)
   {
     // set speed of motor
-    MotorL->setSpeed(speed);
-    MotorR->setSpeed(speed);
-
-    // make motor move forward
-    MotorL->run(FORWARD);
-    MotorR->run(FORWARD);
+    Motor->setSpeed(speed);
+    motor->run(FORWARD)
   }
 
   void backward(int speed)
   {
     // set speed of motor
-    MotorL->setSpeed(speed);
-    MotorR->setSpeed(speed);
-
-    // make motor move backward
-    MotorL->run(BACKWARD);
-    MotorR->run(BACKWARD);
+    Motor->setSpeed(speed);
+    Motor->run(BACKWARD);
   }
 
   void stop()
   {
     // make motor stop
-    MotorL->run(RELEASE);
-    MotorR->run(RELEASE);
-  }
+    Motor->run(RELEASE);
 
-  void forwardLeft(int speed)
-  { // for turning left
-    // set speed of motor
-    MotorL->setSpeed(speed / 2);
-    MotorR->setSpeed(speed);
-
-    // make motor move forward
-    MotorL->run(FORWARD);
-    MotorR->run(FORWARD);
-  }
-
-  void forwardRight(int speed)
-  { // for turning right
-    // set speed of motor
-    MotorL->setSpeed(speed);
-    MotorR->setSpeed(speed / 2);
-
-    // make motor move forward
-    MotorL->run(FORWARD);
-    MotorR->run(FORWARD);
   }
 };
 
