@@ -27,6 +27,10 @@ public:
       return false;
     }
   }
+  
+  float distError(float distanceCm) { // too far (-ve), too close (+ve)
+    return distanceCm - hc.dist();
+  }
 };
 
 Ultrasound ultrasound(2, 3);
