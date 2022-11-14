@@ -28,8 +28,15 @@ public:
     }
   }
   
-  float distError(float distanceCm) { // too far (-ve), too close (+ve)
-    return distanceCm - hc.dist();
+  double distError(double distanceCm) { // too far (-ve), too close (+ve)
+    distance = hc.dist();
+    /*
+    Serial.print("DistanceCm:");
+    Serial.println(distanceCm);
+    Serial.print("Distance:");
+    Serial.println(distance);
+    */
+    return distanceCm - distance;
   }
 };
 
