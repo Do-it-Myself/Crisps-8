@@ -6,7 +6,7 @@ class LineFollower{
   int inputPin;
   double data;
   public:
-  LineFollower();
+  LineFollower() = default;
   LineFollower (int p) {
     inputPin = p;
     pinMode(p, INPUT);
@@ -30,7 +30,7 @@ public:
   bool goingForward;
 
   // constructor
-  Motors();
+  Motors() = default;
   Motors(int pin)
   {
     Motor = MotorShield.getMotor(pin);
@@ -95,7 +95,7 @@ public:
   Servo servo;
 
   // constructor
-  Grabber();
+  Grabber() = default;
   Grabber(int servoNum) {
     if (servoNum == 1) {
       servoPin = 10;
@@ -128,7 +128,7 @@ class Crisps{
   bool onLine;
 
   public:
-  Crisps();
+  Crisps() = default;
   Crisps (int line0, int line1, int line2, int line3, int motor0, int motor1){
     lineFollowers[0] = LineFollower(line0); //this is the line follower on the left for following the main line
     lineFollowers[1] = LineFollower(line1); //this is the line follower on the right for following the main line
