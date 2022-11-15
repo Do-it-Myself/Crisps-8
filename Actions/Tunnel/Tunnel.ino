@@ -3,6 +3,7 @@
 
 #define FAST 255
 #define WALL_DISTANCE_CM 5
+#define WALL_DETECTION_CM 10
 #define Kp 0.2
 #define Ki 0
 #define Kd 0
@@ -79,9 +80,9 @@ public:
     return hc.dist();
   }
 
-  bool distGreaterThan(float distanceCm)
+  bool wall(float distanceCm)
   {
-    if (hc.dist() > distanceCm)
+    if (hc.dist() < distanceCm)
     {
       return true;
     }
@@ -107,20 +108,11 @@ Ultrasound ultrasound(2,3);
 Motors motorL(1);
 Motors motorR(2);
 
-// proportional control
-// sensor on the left
-void tunnelP() {
-  Serial.println(ultrasound.dist());
-  Serial.println(ultrasound.distError(WALL_DISTANCE_CM));
-  motorRatio = 1 + ultrasound.distError(WALL_DISTANCE_CM)*Kp; // > 1 - too right, < 1 - too left
-  if (motorRatio > 1) { 
-    motorL.forward(FAST / motorRatio);
-    motorR.forward(FAST);
-  }
-  else {
-    motorL.forward(FAST);
-    motorR.forward(FAST * motorRatio);
-  }
+bool inTunnel() {
+  // condi 1 - detect wall
+  // condi 2 - cannot detect line
+  // condi 1 & 2 to be true 
+  return (ultrasound.wall(WALL_DETECTION_CM) /*&& cannot detect line*/)
 }
 
 // PID control
@@ -171,7 +163,7 @@ void loop() {
 
   previousTime = millis();
   lastError = ultrasound.distError(WALL_DISTANCE_CM);
-  while (1) {
+  while (ultrasound.inTunnel()) {
     tunnelPID();
   }
 }
