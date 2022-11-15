@@ -2,8 +2,8 @@
 #include <Adafruit_MotorShield.h>
 
 #define FAST 255
-#define WALL_DISTANCE_CM 5
-#define WALL_DETECTION_CM 10
+#define WALL_DISTANCE_CM 8.5
+#define WALL_DETECTION_CM 12
 #define Kp 0.2
 #define Ki 0
 #define Kd 0
@@ -48,14 +48,14 @@ public:
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(FORWARD);
+    Motor->run(BACKWARD);
   }
 
   void backward(int speed)
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(BACKWARD);
+    Motor->run(FORWARD);
   }
 
   void stop()
@@ -104,7 +104,7 @@ public:
   }
 };
 
-Ultrasound ultrasound(2,3);
+Ultrasound ultrasound(6,7);
 Motors motorL(1);
 Motors motorR(2);
 
@@ -112,7 +112,7 @@ bool inTunnel() {
   // condi 1 - detect wall
   // condi 2 - cannot detect line
   // condi 1 & 2 to be true 
-  return (ultrasound.wall(WALL_DETECTION_CM) /*&& cannot detect line*/)
+  return (ultrasound.wall(WALL_DETECTION_CM) /*&& cannot detect line*/);
 }
 
 // PID control
@@ -124,8 +124,8 @@ void tunnelPID() {
   cumError += error*elapsedTime;
   rateError = (error - lastError)/elapsedTime;
 
-  out = Kp*error + Ki*cumError + Kd*rateError;
-  motorRatio = 1 + out;
+  out = Kp*error + Ki*cumError + Kd*rateError; // too far (-ve), too close (+ve)
+  motorRatio = 1 + out; // too far (< 1), too close (> 1)
 
   lastError = error;
   previousTime = currentTime;
@@ -139,16 +139,16 @@ void tunnelPID() {
   Serial.println("");
   
   if (motorRatio > 1) { 
-    motorL.forward(FAST / motorRatio);
-    motorR.forward(FAST);
+    motorL.forward(FAST);
+    motorR.forward(FAST / motorRatio);
   }
   else if (motorRatio > 0) {
-    motorL.forward(FAST);
-    motorR.forward(FAST * motorRatio);
+    motorL.forward(FAST * motorRatio);
+    motorR.forward(FAST);
   }
   else {
-    motorL.forward(FAST);
-    motorR.backward(abs(FAST * motorRatio));
+    motorL.backward(abs(FAST * motorRatio));
+    motorR.forward(FAST);
   }
 }
 
@@ -163,7 +163,10 @@ void loop() {
 
   previousTime = millis();
   lastError = ultrasound.distError(WALL_DISTANCE_CM);
-  while (ultrasound.inTunnel()) {
+  while (inTunnel()) {
     tunnelPID();
   }
+
+  motorL.forward(150);
+  motorR.forward(150);
 }

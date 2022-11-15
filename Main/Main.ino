@@ -116,7 +116,6 @@ public:
   {
     // make motor stop
     Motor->run(RELEASE);
-
   }
 };
 
