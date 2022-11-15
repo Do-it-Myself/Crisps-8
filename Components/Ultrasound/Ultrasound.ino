@@ -40,7 +40,7 @@ public:
   }
 };
 
-Ultrasound ultrasound(2, 3);
+Ultrasound ultrasound(6, 7);
 
 void setup()
 {

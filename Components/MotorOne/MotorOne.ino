@@ -39,14 +39,14 @@ public:
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(FORWARD);
+    Motor->run(BACKWARD);
   }
 
   void backward(int speed)
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(BACKWARD);
+    Motor->run(FORWARD);
   }
 
   void stop()
