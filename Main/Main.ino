@@ -3,67 +3,22 @@
 
 class LineFollower{
   private:
-  static const int threshold = 4;
   int inputPin;
-  int analog;
+  double data;
   public:
-  LineFollower() = default;
+  LineFollower();
   LineFollower (int p) {
     inputPin = p;
     pinMode(p, INPUT);
   }
   bool getLineData(){
-    analog = digitalRead(inputPin);
-    if (analog > threshold){
-      return true;
+    data = digitalRead(inputPin);
+    if (data == 0.0){
+      return true; //black is True
     }else{
-      return false;
+      return false; //white is False
     }
   }
-};
-
-class Crisps{
-  private:
-  LineFollower lineFollowers[4];
-  Motors motors[2];
-  static const int maxSpeed = 255;
-
-  public:
-  Crisps = default();
-  Crisps (int line0, int line1, int line2, int line3, int motor0, int motor1){
-    lineFollowers[0] = LineFollower(line1); //this is the line follower on the left for following the main line
-    lineFollowers[1] = LineFollower(line2); //this is the line follower on the right for following the main line
-    lineFollowers[2] = LineFollower(line3);
-    lineFollowers[3] = LineFollower(line4);
-
-    motors[0] = Motors(motor0);
-    motors[1] = Motors(motor1);
-
-  boolean getLineData(int sensor){
-    return lineFollowers[sensor].getLineData();
-  }
-  void setMotorSpeedForward(int motor, int speed){
-    motors[i].forward(speed)
-  }
-  void setMotorSpeedBackward(int motor, int speed){
-    motors[i].backward(speed)
-  }
-  void fullForward(){
-    setMotorSpeedForward(0, maxSpeed);
-    setMotorSpeedForward(1, maxSpeed);
-  }
-  void fullBackward(){
-    setMotorSpeedBackward(0, maxSpeed);
-    setMotorSpeedBackward(1, maxSpeed);
-  }
-  void stop(int motor){
-    motors[i].stop();
-  }
-  void followLine(){
-
-  }
-  }
-
 };
 
 class Motors{
@@ -71,9 +26,11 @@ public:
   // class field
   Adafruit_MotorShield MotorShield = Adafruit_MotorShield();
   Adafruit_DCMotor *Motor;
-
+  int currentSpeed;
+  bool goingForward;
 
   // constructor
+  Motors();
   Motors(int pin)
   {
     Motor = MotorShield.getMotor(pin);
@@ -102,21 +59,30 @@ public:
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    motor->run(FORWARD)
+    Motor->run(BACKWARD);
+    goingForward = true;
+    currentSpeed = speed;
   }
 
   void backward(int speed)
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(BACKWARD);
+    Motor->run(FORWARD);
+    currentSpeed = 0;
+    goingForward = false;
   }
 
   void stop()
   {
     // make motor stop
     Motor->run(RELEASE);
+    currentSpeed = 0;
 
+  }
+  int getSpeed()
+  {
+    return currentSpeed;
   }
 };
 
@@ -129,6 +95,7 @@ public:
   Servo servo;
 
   // constructor
+  Grabber();
   Grabber(int servoNum) {
     if (servoNum == 1) {
       servoPin = 10;
@@ -153,15 +120,79 @@ public:
 
 };
 
-Motors motors(1, 2);
-Grabber grabber(1);
+class Crisps{
+  private:
+  LineFollower lineFollowers[4];
+  Motors motors[2];
+  static const int maxSpeed = 255;
+  bool onLine;
 
+  public:
+  Crisps();
+  Crisps (int line0, int line1, int line2, int line3, int motor0, int motor1){
+    lineFollowers[0] = LineFollower(line0); //this is the line follower on the left for following the main line
+    lineFollowers[1] = LineFollower(line1); //this is the line follower on the right for following the main line
+    lineFollowers[2] = LineFollower(line2);
+    lineFollowers[3] = LineFollower(line3);
+
+    motors[0] = Motors(motor0); //left motor
+    motors[1] = Motors(motor1); //right motor
+
+    motors[0].begin();
+    motors[1].begin();
+
+    onLine = true;
+  }
+  bool getLineData(int sensor){
+    return lineFollowers[sensor].getLineData();
+  }
+  void setMotorSpeedForward(int i, int speed){
+    motors[i].forward(speed);
+  }
+  void setMotorSpeedBackward(int i, int speed){
+    motors[i].backward(speed);
+  }
+  void fullForward(){
+    setMotorSpeedForward(0, maxSpeed);
+    setMotorSpeedForward(1, maxSpeed);
+  }
+  void fullBackward(){
+    setMotorSpeedBackward(0, maxSpeed);
+    setMotorSpeedBackward(1, maxSpeed);
+  }
+  void stop(int i ){
+    motors[i].stop();
+  }
+  void followLine(){
+    int step = 1;
+    bool leftLine = getLineData(0);
+    bool rightLine = getLineData(1);
+
+    if (!leftLine || !rightLine){
+      onLine = false;
+      if(!leftLine && rightLine){
+        int speedLeft = motors[0].getSpeed();
+        motors[0].forward(speedLeft - step);
+      } else if (leftLine && !rightLine) {
+        int speedRight = motors[1].getSpeed();
+        motors[1].forward(speedRight - step);    
+     }
+    } else if (onLine == true){
+      motors[0].forward(maxSpeed);
+      motors[1].forward(maxSpeed);
+  }
+  }
+};
+
+
+
+Crisps robot;
 void setup () {
   Serial.begin(9600);
-  motors.begin();
-  grabber.begin();
+  robot = Crisps(0, 1, 2, 3, 1, 2);
+  
 }
 
 void loop () {
-
+  robot.followLine();
 }
