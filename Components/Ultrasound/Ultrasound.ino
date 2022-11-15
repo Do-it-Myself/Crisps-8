@@ -16,9 +16,9 @@ public:
     return hc.dist();
   }
 
-  bool distGreaterThan(float distanceCm)
+  bool wall(float distanceCm)
   {
-    if (hc.dist() > distanceCm)
+    if (hc.dist() < distanceCm)
     {
       return true;
     }
@@ -26,6 +26,17 @@ public:
     {
       return false;
     }
+  }
+  
+  double distError(double distanceCm) { // too far (-ve), too close (+ve)
+    distance = hc.dist();
+    /*
+    Serial.print("DistanceCm:");
+    Serial.println(distanceCm);
+    Serial.print("Distance:");
+    Serial.println(distance);
+    */
+    return distanceCm - distance;
   }
 };
 
@@ -39,5 +50,5 @@ void setup()
 void loop()
 {
   Serial.println(ultrasound.dist());
-  Serial.println(ultrasound.distGreaterThan(distanceFromWall));
+  Serial.println(ultrasound.wall(distanceFromWall));
 }

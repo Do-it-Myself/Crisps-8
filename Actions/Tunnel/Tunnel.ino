@@ -2,9 +2,15 @@
 #include <Adafruit_MotorShield.h>
 
 #define FAST 255
-#define SLOW 155 
-#define WALL_DISTANCE_CM 10
-#define WALL_DISTANCE_TOLERANCE 2
+#define WALL_DISTANCE_CM 5
+#define WALL_DETECTION_CM 10
+#define Kp 0.2
+#define Ki 0
+#define Kd 0
+float motorRatio = 1;
+unsigned long currentTime, previousTime;
+double elapsedTime;
+double distance, error, lastError, cumError, rateError, out;
 
 class Motors{
 public:
@@ -74,9 +80,9 @@ public:
     return hc.dist();
   }
 
-  bool distGreaterThan(float distanceCm)
+  bool wall(float distanceCm)
   {
-    if (hc.dist() > distanceCm)
+    if (hc.dist() < distanceCm)
     {
       return true;
     }
@@ -85,30 +91,65 @@ public:
       return false;
     }
   }
+  
+  double distError(double distanceCm) { // too far (-ve), too close (+ve)
+    distance = hc.dist();
+    /*
+    Serial.print("DistanceCm:");
+    Serial.println(distanceCm);
+    Serial.print("Distance:");
+    Serial.println(distance);
+    */
+    return distanceCm - distance;
+  }
 };
 
 Ultrasound ultrasound(2,3);
 Motors motorL(1);
 Motors motorR(2);
 
-void tunnel() { // sensor on the left
-  Serial.println(ultrasound.dist());
-  if (ultrasound.distGreaterThan(WALL_DISTANCE_CM + WALL_DISTANCE_TOLERANCE)) { // too right -> turn left
-    motorL.forward(FAST);
+bool inTunnel() {
+  // condi 1 - detect wall
+  // condi 2 - cannot detect line
+  // condi 1 & 2 to be true 
+  return (ultrasound.wall(WALL_DETECTION_CM) /*&& cannot detect line*/)
+}
+
+// PID control
+// sensor on the left
+void tunnelPID() {
+  currentTime = millis();
+  elapsedTime = (double)(currentTime - previousTime);
+  error = (double)ultrasound.distError(WALL_DISTANCE_CM);
+  cumError += error*elapsedTime;
+  rateError = (error - lastError)/elapsedTime;
+
+  out = Kp*error + Ki*cumError + Kd*rateError;
+  motorRatio = 1 + out;
+
+  lastError = error;
+  previousTime = currentTime;
+
+  Serial.print("Error:");
+  Serial.println(error);
+  Serial.print("Out:");
+  Serial.println(out);
+  Serial.print("Ratio:");
+  Serial.println(motorRatio);
+  Serial.println("");
+  
+  if (motorRatio > 1) { 
+    motorL.forward(FAST / motorRatio);
     motorR.forward(FAST);
-    Serial.println("Left");
   }
-  else if (!ultrasound.distGreaterThan(WALL_DISTANCE_CM - WALL_DISTANCE_TOLERANCE)) { // too left -> turn right
+  else if (motorRatio > 0) {
     motorL.forward(FAST);
-    motorR.forward(FAST);
-    Serial.println("Right");
+    motorR.forward(FAST * motorRatio);
   }
-  else { // within tolerance -> move straight
+  else {
     motorL.forward(FAST);
-    motorR.forward(FAST);
-    Serial.println("Straight");
+    motorR.backward(abs(FAST * motorRatio));
   }
-  delay(200);
 }
 
 void setup() {
@@ -118,5 +159,11 @@ void setup() {
 }
 
 void loop() {
-  tunnel();
+  //tunnelP();
+
+  previousTime = millis();
+  lastError = ultrasound.distError(WALL_DISTANCE_CM);
+  while (ultrasound.inTunnel()) {
+    tunnelPID();
+  }
 }
