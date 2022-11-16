@@ -1,6 +1,10 @@
 #include <HCSR04.h>
 #include <Adafruit_MotorShield.h>
 
+#define TRIG_TUNNEL 6
+#define ECHO_TUNNEL 7
+#define AMBER_LIGHT 8
+
 #define FAST 255
 #define WALL_DISTANCE_CM 8.5
 #define WALL_DETECTION_CM 12
@@ -17,12 +21,13 @@ public:
   // class field
   Adafruit_MotorShield MotorShield = Adafruit_MotorShield();
   Adafruit_DCMotor *Motor;
-
+  int lightPin;
 
   // constructor
-  Motors(int pin)
+  Motors(int pin, int light)
   {
     Motor = MotorShield.getMotor(pin);
+    lightPin = light;
   }
 
   // functions
@@ -42,6 +47,9 @@ public:
     Motor->run(FORWARD);
     Motor->run(RELEASE);
 
+    // configure amber light
+    pinMode(lightPin, OUTPUT);
+
   }
 
   void forward(int speed)
@@ -49,6 +57,9 @@ public:
     // set speed of motor
     Motor->setSpeed(speed);
     Motor->run(BACKWARD);
+
+    // turn on light
+    digitalWrite(lightPin, HIGH);
   }
 
   void backward(int speed)
@@ -56,12 +67,18 @@ public:
     // set speed of motor
     Motor->setSpeed(speed);
     Motor->run(FORWARD);
+
+    // turn on light
+    digitalWrite(lightPin, HIGH);
   }
 
   void stop()
   {
     // make motor stop
     Motor->run(RELEASE);
+
+    // turn off light
+    digitalWrite(lightPin, LOW);
   }
 };
 
@@ -104,9 +121,9 @@ public:
   }
 };
 
-Ultrasound ultrasound(6,7);
-Motors motorL(1);
-Motors motorR(2);
+Ultrasound ultrasound(TRIG_TUNNEL, ECHO_TUNNEL);
+Motors motorL(1, AMBER_LIGHT);
+Motors motorR(2, AMBER_LIGHT);
 
 bool inTunnel() {
   // condi 1 - detect wall

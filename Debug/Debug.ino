@@ -122,64 +122,53 @@ public:
 
 class Crisps{
   private:
-  LineFollower lineFollowers[4];
-  Motors motors[2];
+  LineFollower lineFollower1;
+  LineFollower lineFollower2;
+  LineFollower lineFollower3;
+  LineFollower lineFollower4;
+  Motors motorL;
+  Motors motorR;
   static const int maxSpeed = 255;
   bool onLine;
 
   public:
   Crisps() = default;
-  Crisps (int line0, int line1, int line2, int line3, int motor0, int motor1){
-    lineFollowers[0] = LineFollower(line0); //this is the line follower on the left for following the main line
-    lineFollowers[1] = LineFollower(line1); //this is the line follower on the right for following the main line
-    lineFollowers[2] = LineFollower(line2);
-    lineFollowers[3] = LineFollower(line3);
-
-    motors[0] = Motors(motor0); //left motor
-    motors[1] = Motors(motor1); //right motor
-
-    motors[0].begin();
-    motors[1].begin();
-
-    onLine = true;
-  }
-  bool getLineData(int sensor){
-    return lineFollowers[sensor].getLineData();
-  }
-  void setMotorSpeedForward(int i, int speed){
-    motors[i].forward(speed);
-  }
-  void setMotorSpeedBackward(int i, int speed){
-    motors[i].backward(speed);
-  }
+  Crisps (int line0, int line1, int line2, int line3, int motor0, int motor1): 
+    lineFollower1(line0), //this is the line follower on the left for following the main line
+    lineFollower2(line1), //this is the line follower on the right for following the main line
+    lineFollower3(line2),
+    lineFollower4(line3),
+    motorL(motor0), 
+    motorR(motor1) {
+      motorL.begin();
+      motorR.begin();
+      onLine = true;
+    }
   void fullForward(){
-    setMotorSpeedForward(0, maxSpeed);
-    setMotorSpeedForward(1, maxSpeed);
+    motorL.forward(maxSpeed);
+    motorR.forward(maxSpeed);
   }
   void fullBackward(){
-    setMotorSpeedBackward(0, maxSpeed);
-    setMotorSpeedBackward(1, maxSpeed);
-  }
-  void stop(int i ){
-    motors[i].stop();
+    motorL.backward(maxSpeed);
+    motorR.backward(maxSpeed);
   }
   void followLine(){
     int step = 1;
-    bool leftLine = getLineData(0);
-    bool rightLine = getLineData(1);
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
 
     if (!leftLine || !rightLine){
       onLine = false;
       if(!leftLine && rightLine){
-        int speedLeft = motors[0].getSpeed();
-        motors[0].forward(speedLeft - step);
+        int speedLeft = motorL.getSpeed();
+        motorL.forward(speedLeft - step);
       } else if (leftLine && !rightLine) {
-        int speedRight = motors[1].getSpeed();
-        motors[1].forward(speedRight - step);    
+        int speedRight = motorR.getSpeed();
+        motorR.forward(speedRight - step);    
      }
     } else if (onLine == true){
-      motors[0].forward(maxSpeed);
-      motors[1].forward(maxSpeed);
+      motorL.forward(maxSpeed);
+      motorR.forward(maxSpeed);
   }
   }
 };
@@ -196,6 +185,7 @@ void setup () {
 }
 
 void loop () {
-  Serial.println("Hello loop!");
+  Serial.println("Full Forward!");
   robot.fullForward();
+  delay(1000);
 }
