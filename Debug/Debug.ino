@@ -1,6 +1,12 @@
 #include <Adafruit_MotorShield.h>
 #include <Servo.h>
 
+#define TRIG_BLOCK 4
+#define ECHO_BLOCK 5
+#define TRIG_TUNNEL 6
+#define ECHO_TUNNEL 7
+#define AMBER_LIGHT 8
+
 class LineFollower{
   private:
   int inputPin;
@@ -22,6 +28,8 @@ class LineFollower{
 };
 
 class Motors{
+private:
+  int lightPin;
 public:
   // class field
   Adafruit_MotorShield MotorShield = Adafruit_MotorShield();
@@ -31,9 +39,10 @@ public:
 
   // constructor
   Motors() = default;
-  Motors(int pin)
+  Motors(int pin, int light)
   {
     Motor = MotorShield.getMotor(pin);
+    lightPin = light;
   }
 
   // functions
@@ -53,24 +62,32 @@ public:
     Motor->run(FORWARD);
     Motor->run(RELEASE);
 
+    // configure amber light
+    pinMode(lightPin, OUTPUT);
   }
 
   void forward(int speed)
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(BACKWARD);
+    Motor->run(FORWARD);
     goingForward = true;
     currentSpeed = speed;
+    
+    // turn on light
+    digitalWrite(lightPin, HIGH);
   }
 
   void backward(int speed)
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(FORWARD);
+    Motor->run(BACKWARD);
     currentSpeed = 0;
     goingForward = false;
+
+    // turn on light
+    digitalWrite(lightPin, HIGH);
   }
 
   void stop()
@@ -79,6 +96,8 @@ public:
     Motor->run(RELEASE);
     currentSpeed = 0;
 
+    // turn off light
+    digitalWrite(lightPin, LOW);
   }
   int getSpeed()
   {
@@ -138,8 +157,8 @@ class Crisps{
     lineFollower2(line1), //this is the line follower on the right for following the main line
     lineFollower3(line2),
     lineFollower4(line3),
-    motorL(motor0), 
-    motorR(motor1) {
+    motorL(motor0, AMBER_LIGHT), 
+    motorR(motor1, AMBER_LIGHT) {
       motorL.begin();
       motorR.begin();
       onLine = true;
@@ -173,9 +192,8 @@ class Crisps{
   }
 };
 
-
-
 Crisps robot;
+
 void setup () {
   Serial.begin(9600);
   Serial.println("Hello setup before!");

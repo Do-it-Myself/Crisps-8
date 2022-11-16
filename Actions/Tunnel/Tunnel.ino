@@ -56,7 +56,7 @@ public:
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(BACKWARD);
+    Motor->run(FORWARD);
 
     // turn on light
     digitalWrite(lightPin, HIGH);
@@ -66,7 +66,7 @@ public:
   {
     // set speed of motor
     Motor->setSpeed(speed);
-    Motor->run(FORWARD);
+    Motor->run(BACKWARD);
 
     // turn on light
     digitalWrite(lightPin, HIGH);
