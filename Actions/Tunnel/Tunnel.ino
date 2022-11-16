@@ -14,7 +14,7 @@
 float motorRatio = 1;
 unsigned long currentTime, previousTime;
 double elapsedTime;
-double distance, error, lastError, cumError, rateError, out;
+double error, lastError, cumError, rateError, out;
 
 class Motors{
 public:
@@ -110,7 +110,7 @@ public:
   }
   
   double distError(double distanceCm) { // too far (-ve), too close (+ve)
-    distance = hc.dist();
+    double distance = hc.dist();
     /*
     Serial.print("DistanceCm:");
     Serial.println(distanceCm);

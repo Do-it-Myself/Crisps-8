@@ -1,5 +1,5 @@
 #define IR_PIN A0
-#define IR_THRESHOLD 775
+#define IR_THRESHOLD 780
 
 class IR{
 private:
@@ -15,8 +15,15 @@ public:
 
   // functions
   bool obstacle(int threshold) {
-    Serial.println(analogRead(irPin));
-    return (analogRead(irPin) < threshold);
+    int analog = 0;
+    int analog_reading;
+    for (int i = 0; i < 10; i++) {
+      analog_reading = analogRead(irPin);
+      analog += analog_reading;
+    }
+    analog /= 10;
+    Serial.println(analog);
+    return (analog < threshold);
   }
 };
 
