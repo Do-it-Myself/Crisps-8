@@ -41,32 +41,43 @@ void fullBackward()
   motorR.backward(maxSpeed);
 }
 
-void followLine()
-{
-  int step = 1;
-  bool leftLine = lineFollower1.getLineData();
-  bool rightLine = lineFollower2.getLineData();
-
-  if (!leftLine || !rightLine)
-  {
-    onLine = false;
-    if (!leftLine && rightLine)
-    {
-      int speedLeft = motorL.getSpeed();
-      motorL.forward(speedLeft - step);
-    }
-    else if (leftLine && !rightLine)
-    {
-      int speedRight = motorR.getSpeed();
-      motorR.forward(speedRight - step);
-    }
+void followLine(){
+    int step = 65;
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
+    Serial.println(leftLine);
+    Serial.println(rightLine);
+    Serial.println("-----");
+    if (!leftLine || !rightLine){
+      onLine = false;
+      if(!leftLine && rightLine){
+        int speedLeft = motorL.getSpeed();
+        if(speedLeft - step < 0){
+          motorL.forward(0);
+        } else {
+        motorL.forward(speedLeft - step);
+        }
+        Serial.println("left");
+        Serial.println(motorL.getSpeed());
+      } else if (leftLine && !rightLine) {
+        int speedRight = motorR.getSpeed();
+        if(speedRight - step < 0){
+          motorR.forward(0);
+        }else{
+          motorR.forward(speedRight-step);    
+        }
+        Serial.println("right");
+        Serial.println(motorR.getSpeed());
+     } else {
+      motorL.forward(maxSpeed);
+      motorR.forward(maxSpeed);
+     }
+    } else if (onLine == false){
+      onLine = true;
+      motorL.forward(maxSpeed);
+      motorR.forward(maxSpeed);
   }
-  else if (onLine == true)
-  {
-    motorL.forward(maxSpeed);
-    motorR.forward(maxSpeed);
   }
-}
 
 // Tunnel
 bool inTunnel()

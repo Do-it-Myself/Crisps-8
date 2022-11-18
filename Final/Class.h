@@ -187,9 +187,7 @@ public:
 
   // constructor
   Ultrasound() = default;
-  Ultrasound(int trig, int echo){
-     hc(trig, echo);
-  };
+  Ultrasound(int trig, int echo): hc(trig, echo){};
 
   // functions
   float dist()

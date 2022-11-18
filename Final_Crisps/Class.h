@@ -142,6 +142,7 @@ public:
   // functions
   void begin() {
     servo.attach(servoPin);
+    servo.write(90); // release
   }
 
   void grab() {

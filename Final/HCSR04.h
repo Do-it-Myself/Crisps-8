@@ -4,6 +4,7 @@
 class HCSR04
 {
 public:
+  HCSR04() = default;
 	HCSR04(int out, int echo);			// initialisation class HCSR04 (trig pin , echo pin)
 	HCSR04(int out, int echo[], int n); // initialisation class HCSR04 (trig pin , echo pin)
 	~HCSR04();							// destructor
