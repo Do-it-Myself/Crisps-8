@@ -11,12 +11,12 @@
 */
 
 Crisps robot;
-Ultrasound ultraBlock(4,5);
-Ultrasound ultraTunnel(6,7);
+Ultrasound ultraBlock(TRIG_BLOCK,ECHO_BLOCK);
+Ultrasound ultraTunnel(TRIG_TUNNEL,ECHO_TUNNEL);
 
 void setup() {
   Serial.begin(9600);
-  robot = Crisps(0,1,2,3,1,2,ultraBlock,ultraTunnel);
+  robot = Crisps(ultraBlock,ultraTunnel);
 }
 
 void loop() {
