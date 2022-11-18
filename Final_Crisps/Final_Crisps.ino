@@ -10,19 +10,27 @@
 6. Round 2 (think later)
 */
 
-Crisps robot;
-Ultrasound ultrasound1(4,5);
-Ultrasound ultrasound2(6,7);
 
 void setup() {
   Serial.begin(9600);
-  robot = Crisps(0,1,2,3,1,2);
+
+  // Motor
+  motorL.begin();
+  motorR.begin();
+
+  // Light
+  pinMode(RED_LIGHT, OUTPUT);
+  digitalWrite(RED_LIGHT, LOW);
+  pinMode(AMBER_LIGHT, OUTPUT);
+  digitalWrite(AMBER_LIGHT, LOW);
+  pinMode(GREEN_LIGHT, OUTPUT);
+  digitalWrite(GREEN_LIGHT, LOW);
 }
 
 void loop() {
+  fullForward();
   Serial.println("Ultrasound:");
-  Serial.println(ultrasound1.dist());
-  Serial.println(ultrasound2.dist());
-  robot.debug();
+  Serial.println(ultrasoundBlock.dist());
+  Serial.println(ultrasoundTunnel.dist());
   delay(2000);
 }

@@ -1,4 +1,4 @@
-#include <HCSR04.h>
+#include "HCSR04.h"
 #define distanceFromWall 5
 
 class Ultrasound
@@ -8,6 +8,7 @@ public:
   HCSR04 hc;
 
   // constructor
+  Ultrasound() = default;
   Ultrasound(int trig, int echo) : hc(trig, echo){};
 
   // functions
@@ -40,15 +41,20 @@ public:
   }
 };
 
-Ultrasound ultrasound(6, 7);
+Ultrasound ultrasound1;
+Ultrasound ultrasound2;
 
 void setup()
 {
   Serial.begin(9600);
+  ultrasound1 = Ultrasound(4,5);
+  ultrasound2 = Ultrasound(6,7);
 }
 
 void loop()
 {
-  Serial.println(ultrasound.dist());
-  //Serial.println(ultrasound.wall(distanceFromWall));
+  Serial.println("Ultrasound:");
+  Serial.println(ultrasound1.dist());
+  Serial.println(ultrasound2.dist());
+  delay(2000);
 }
