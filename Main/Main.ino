@@ -191,9 +191,8 @@ class Crisps{
   }
 };
 
-
-
 Crisps robot;
+
 void setup () {
   Serial.begin(9600);
   Serial.println("Hello setup before!");

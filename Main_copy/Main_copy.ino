@@ -248,6 +248,8 @@ public:
                                                                                lineFollower4(line3),
                                                                                motorL(motor0, AMBER_LIGHT),
                                                                                motorR(motor1, AMBER_LIGHT),
+                                                                               ultrasoundBlock(4,5),
+                                                                               ultrasoundTunnel(6,7),
                                                                                irBlock(IR_PIN)
   {
     // Line sensor
@@ -383,6 +385,7 @@ public:
 };
 
 Crisps robot;
+
 void setup () {
   Serial.begin(9600);
   robot = Crisps(0, 1, 2, 3, 1, 2);  

@@ -127,6 +127,7 @@ void blockDetection()
       digitalWrite(GREEN_LIGHT, LOW);
       delay(5000);
       digitalWrite(RED_LIGHT, LOW);
+      
     }
     else
     { // not dense - green

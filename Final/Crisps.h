@@ -28,6 +28,7 @@ public:
   IR irBlock;
   Ultrasound ultrasoundBlock;;
   Ultrasound ultrasoundTunnel;
+  Grabber grabber;
   static const int maxSpeed = 255;
   bool onLine;
 
@@ -38,7 +39,7 @@ public:
                                                                                lineFollower4(line3),
                                                                                motorL(motor0, AMBER_LIGHT),
                                                                                motorR(motor1, AMBER_LIGHT),
-                                                                               irBlock(IR_PIN)
+                                                                               irBlock(IR_PIN),
   {
     // Line sensor
     onLine = true;
