@@ -248,8 +248,8 @@ public:
                                                                                lineFollower4(line3),
                                                                                motorL(motor0, AMBER_LIGHT),
                                                                                motorR(motor1, AMBER_LIGHT),
-                                                                               ultrasoundBlock(4,5),
-                                                                               ultrasoundTunnel(6,7),
+                                                                               ultrasoundBlock(TRIG_BLOCK,ECHO_BLOCK),
+                                                                               ultrasoundTunnel(TRIG_TUNNEL,ECHO_TUNNEL),
                                                                                irBlock(IR_PIN)
   {
     // Line sensor
