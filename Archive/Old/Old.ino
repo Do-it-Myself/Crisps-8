@@ -11,8 +11,8 @@
 */
 
 Crisps robot;
-Ultrasound ultrasound1(4,5);
-Ultrasound ultrasound2(6,7);
+//Ultrasound ultrasound1(4,5);
+//Ultrasound ultrasound2(6,7);
 
 void setup() {
   Serial.begin(9600);
@@ -21,8 +21,8 @@ void setup() {
 
 void loop() {
   Serial.println("Ultrasound:");
-  Serial.println(ultrasound1.dist());
-  Serial.println(ultrasound2.dist());
+  //Serial.println(ultrasound1.dist());
+  //Serial.println(ultrasound2.dist());
   robot.debug();
   delay(2000);
 }

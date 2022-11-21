@@ -22,9 +22,8 @@ public:
   Motors motorL;
   Motors motorR;
   IR irBlock;
-  Ultrasound ultrasoundBlock;
-  ;
-  Ultrasound ultrasoundTunnel;
+  Ultrasound *ultrasoundBlock;
+  Ultrasound *ultrasoundTunnel;
   Grabber grabber;
   static const int maxSpeed = 255;
   bool onLine;
@@ -45,16 +44,14 @@ public:
   double branchTimeTol = 2000; // 2 s
 
   Crisps() = default;
-  Crisps(int line0, int line1, int line2, int line3, int motor0, int motor1) : lineFollower1(line0), // this is the line follower on the left for following the main line
-                                                                               lineFollower2(line1), // this is the line follower on the right for following the main line
-                                                                               lineFollower3(line2),
-                                                                               lineFollower4(line3),
-                                                                               motorL(motor0, AMBER_LIGHT),
-                                                                               motorR(motor1, AMBER_LIGHT),
-                                                                               ultrasoundBlock(TRIG_BLOCK, ECHO_BLOCK),
-                                                                               ultrasoundTunnel(TRIG_TUNNEL, ECHO_TUNNEL),
-                                                                               irBlock(IR_PIN),
-                                                                               grabber(SERVO_1)
+  Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) : lineFollower1(LINEFOLLOWER_1), // this is the line follower on the left for following the main line
+                                                            lineFollower2(LINEFOLLOWER_2), // this is the line follower on the right for following the main line
+                                                            lineFollower3(LINEFOLLOWER_3),
+                                                            lineFollower4(LINEFOLLOWER_4),
+                                                            motorL(MOTOR_L, AMBER_LIGHT),
+                                                            motorR(MOTOR_R, AMBER_LIGHT),
+                                                            irBlock(IR_PIN),
+                                                            grabber(SERVO_1)
   {
     // Line sensor
     onLine = true;
@@ -65,6 +62,10 @@ public:
 
     // Grabber
     grabber.begin();
+
+    // Ultrasound
+    ultrasoundBlock = ultraBlock;
+    ultrasoundTunnel = ultraTunnel;
 
     // Block light
     pinMode(RED_LIGHT, OUTPUT);
@@ -159,41 +160,39 @@ public:
   }
 
   // Line branch detection
-  bool hasLeftBranch() 
+  bool hasLeftBranch()
   {
-    bool leftLine = lineFollower1.getLineData();
-    bool rightLine = lineFollower2.getLineData();
-    bool frontLine = lineFollower3.getLineData();
-    bool backLine = lineFollower4.getLineData();
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
 
-    return (frontLine && backLine && leftLine &&!rightLine);
+    return (veryLeftLine && !veryRightLine);
   }
 
-  bool hasRightBranch() 
+  bool hasRightBranch()
   {
-    bool leftLine = lineFollower1.getLineData();
-    bool rightLine = lineFollower2.getLineData();
-    bool frontLine = lineFollower3.getLineData();
-    bool backLine = lineFollower4.getLineData();
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
 
-    return (frontLine && backLine && rightLine &&!leftLine);
+    return (veryRightLine && !veryLeftLine);
   }
 
   void countBranch()
   {
-    if (hasLeftBranch()) 
+    if (hasLeftBranch())
     {
       currLeftBranchTime = millis();
       rightBranch = 0; // reset rightBranch as we passed through all leftBranch already
-      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && leftBranch < 2) { // enough time has passed -> new branch; <2 condition - in case overcount
+      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && leftBranch < 2)
+      { // enough time has passed -> new branch; <2 condition - in case overcount
         leftBranch += 1;
       }
     }
-    if (hasRightBranch()) 
+    if (hasRightBranch())
     {
       currRightBranchTime = millis();
       leftBranch = 0; // reset leftBranch as we passed through all leftBranch already
-      if (currRightBranchTime - prevRightBranchTime > branchTimeTol && rightBranch < 3) { // enough time has passed -> new branch; <3 condition - in case overcount
+      if (currRightBranchTime - prevRightBranchTime > branchTimeTol && rightBranch < 3)
+      { // enough time has passed -> new branch; <3 condition - in case overcount
         rightBranch += 1;
       }
     }
@@ -202,11 +201,11 @@ public:
 
   // Branches and zones boolean for signals
   bool reachedGreenZone() // less dense
-  { 
+  {
     return (rightBranch == 1);
   }
 
-  bool reachedStartEndZone() 
+  bool reachedStartEndZone()
   {
     return (rightBranch == 2);
   }
@@ -216,44 +215,27 @@ public:
     return (rightBranch == 3);
   }
 
-  bool reachedFirstLeftBranch() 
+  bool reachedFirstLeftBranch()
   {
     return (leftBranch == 1);
   }
 
-  bool reachedSecondLeftBranch() 
+  bool reachedSecondLeftBranch()
   {
     return (leftBranch == 2);
   }
 
   // Tunnel - bool might need averaging
-  bool inTunnel() // detect the first moment entering tunnel -> trigger tunnelPID
+  bool inTunnel() // detect when it is inside a tunnel -> trigger tunnelPID
   {
-    // only detect backLine
-    bool leftLine = lineFollower1.getLineData();
-    bool rightLine = lineFollower2.getLineData();
-    bool frontLine = lineFollower3.getLineData();
-    bool backLine = lineFollower4.getLineData();
-
-    return (!leftLine && !rightLine && !frontLine && backLine);
-  }
-
-  bool outTunnel() // detect the moment leaving tunnel -> break tunnelPID
-  {
-    // detect any white line
-    bool leftLine = lineFollower1.getLineData();
-    bool rightLine = lineFollower2.getLineData();
-    bool frontLine = lineFollower3.getLineData();
-    bool backLine = lineFollower4.getLineData();
-
-    return (leftLine || rightLine || frontLine || backLine);
+    return (ultrasoundTunnel->wall(WALL_DETECTION_CM));
   }
 
   void tunnelPID()
   {
     currentTime = millis();
     elapsedTime = (double)(currentTime - previousTime);
-    error = (double)ultrasoundTunnel.distError(WALL_DISTANCE_CM);
+    error = (double)ultrasoundTunnel->distError(WALL_DISTANCE_CM);
     cumError += error * elapsedTime;
     rateError = (error - lastError) / elapsedTime;
 
@@ -290,36 +272,90 @@ public:
 
   void triggerTunnelPID() // triggered when inTunnel, break when outTunnel
   {
-    while (!outTunnel()) {
+    while (!outTunnel())
+    {
       tunnelPID();
     }
   }
 
-  // Block
-  bool blockDetection() // detect and grab the block, return whether the block is dense or not
+  // Block collection
+  void blockBeforeGrab()
+  {
+    // rotate 90 deg anti-clockwise
+    anticlockwise();
+    delay(700); // till front has left the main line
+    bool frontLine = false;
+    do
+    { // front hasn't detected branches yet
+      frontLine = lineFollower3.getLineData();
+    } while (!frontLine);
+    stop();
+
+    // straight till detect block
+    fullForward();
+    while (!irBlock.obstacle(IR_THRESHOLD))
+    {
+    }
+    stop();
+  }
+
+  bool blockDifferentiate() // detect and grab the block, return whether the block is dense or not
   {
     bool isDense = true;
-    if (irBlock.obstacle(IR_THRESHOLD))
-    { // detected obstacle
-      if (ultrasoundBlock.denseBlock(DENSE_THRESHOLD))
-      { // dense - red
-        digitalWrite(RED_LIGHT, HIGH);
-        digitalWrite(GREEN_LIGHT, LOW);
-        delay(5000);
-        digitalWrite(RED_LIGHT, LOW);
-      }
-      else
-      { // not dense - green
-        digitalWrite(RED_LIGHT, LOW);
-        digitalWrite(GREEN_LIGHT, HIGH);
-        delay(5000);
-        digitalWrite(GREEN_LIGHT, LOW);
-        isDense = false;
-      }
-      // grab foam
-      grabber.grab();
+    if (ultrasoundBlock->denseBlock(DENSE_THRESHOLD))
+    { // dense - red
+      digitalWrite(RED_LIGHT, HIGH);
+      digitalWrite(GREEN_LIGHT, LOW);
+      delay(5000);
+      digitalWrite(RED_LIGHT, LOW);
     }
+    else
+    { // not dense - green
+      digitalWrite(RED_LIGHT, LOW);
+      digitalWrite(GREEN_LIGHT, HIGH);
+      delay(5000);
+      digitalWrite(GREEN_LIGHT, LOW);
+      isDense = false;
+    }
+    // grab foam
+    grabber.grab();
     return isDense;
+  }
+
+  void blockAfterGrab()
+  {
+    // backward for short time (experiment ?)
+    fullBackward();
+    delay(700);
+    stop();
+
+    // rotate 90 deg clockwise
+    clockwise();
+    delay(700); // till front has left the main line
+    bool frontLine = false;
+    do
+    { // front hasn't detected branches yet
+      frontLine = lineFollower3.getLineData();
+    } while (!frontLine);
+    stop();
+  }
+
+  // Block release
+  void blockBeforeRelease() {
+    // rotate 90 deg clockwise
+    clockwise();
+    delay(700); // till front has left the main line
+    bool frontLine = false;
+    do
+    { // front hasn't detected branches yet
+      frontLine = lineFollower3.getLineData();
+    } while (!frontLine);
+    stop();
+
+    // forward for certain period
+    fullForward();
+    delay(1000);
+    stop();
   }
 
   void blockRelease()
@@ -328,10 +364,16 @@ public:
     grabber.release();
   }
 
+  void blockAfterRelease() {
+    // backward for certain period
+
+    // rotate 90 deg anticlockwise
+  }
+
   // For debugging
   void debug()
   {
-    Serial.println(ultrasoundBlock.dist());
-    Serial.println(ultrasoundTunnel.dist());
+    Serial.println(ultrasoundBlock->dist());
+    Serial.println(ultrasoundTunnel->dist());
   }
 };

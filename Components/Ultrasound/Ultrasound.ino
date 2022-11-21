@@ -1,4 +1,4 @@
-#include "HCSR04.h"
+#include <HCSR04.h>
 #define distanceFromWall 5
 
 class Ultrasound
@@ -41,20 +41,35 @@ public:
   }
 };
 
-Ultrasound ultrasound1;
-Ultrasound ultrasound2;
+class Crisps {
+public:
+  Ultrasound* ultrasoundBlock;
+  Ultrasound* ultrasoundTunnel;
+  Crisps() = default;
+  Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) {
+    ultrasoundBlock = ultraBlock;
+    ultrasoundTunnel = ultraTunnel;
+  }
+  void debug()
+  {
+    Serial.println("Ultrasound:");
+    Serial.println(ultrasoundBlock->dist());
+    Serial.println(ultrasoundTunnel->dist());
+    delay(2000);
+  }
+};
+
+Crisps robot;
+Ultrasound ultrasound1(4,5);
+Ultrasound ultrasound2(6,7);
 
 void setup()
 {
   Serial.begin(9600);
-  ultrasound1 = Ultrasound(4,5);
-  ultrasound2 = Ultrasound(6,7);
+  robot = Crisps(&ultrasound1,&ultrasound2);
 }
 
 void loop()
 {
-  Serial.println("Ultrasound:");
-  Serial.println(ultrasound1.dist());
-  Serial.println(ultrasound2.dist());
-  delay(2000);
+  robot.debug();
 }
