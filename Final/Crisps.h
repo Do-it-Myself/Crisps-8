@@ -2,6 +2,8 @@
 
 // Tunnel
 #define FAST 255
+#define ROTATION_DELAY 700
+#define FORWARD_DELAY 500
 #define WALL_DISTANCE_CM 8.5
 #define WALL_DETECTION_CM 12
 #define Kp 0.2
@@ -91,6 +93,9 @@ public:
   {
     motorL.stop();
     motorR.stop();
+
+    // turn off light
+    digitalWrite(AMBER_LIGHT, LOW);
   }
 
   void clockwise()
@@ -103,6 +108,30 @@ public:
   {
     motorL.backward(maxSpeed);
     motorR.forward(maxSpeed);
+  }
+
+  void leftAnchoredAnticlockwise()
+  {
+    motorL.stop();
+    motorR.forward(maxSpeed);
+  }
+
+  void leftAnchoredClockwise()
+  {
+    motorL.stop();
+    motorR.backward(maxSpeed);
+  }
+
+  void rightAnchoredAnticlockwise() 
+  {
+    motorL.backward(maxSpeed);
+    motorR.stop();
+  }
+
+  void rightAnchoredClockwise() 
+  {
+    motorL.forward(maxSpeed);
+    motorR.stop();
   }
 
   // Line following motion
@@ -162,18 +191,22 @@ public:
   // Line branch detection boolean for signals
   bool hasLeftBranch()
   {
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (veryLeftLine && !veryRightLine);
+    return (leftLine && veryLeftLine && !rightLine && !veryRightLine);
   }
 
   bool hasRightBranch()
   {
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (veryRightLine && !veryLeftLine);
+    return (rightLine && veryRightLine && !leftLine && !veryLeftLine);
   }
 
   void countBranch()
@@ -282,13 +315,13 @@ public:
   void blockBeforeGrab()
   {
     // rotate 90 deg anti-clockwise
-    anticlockwise();
-    delay(700); // till front has left the main line
-    bool frontLine = false;
+    leftAnchoredAnticlockwise();
+    delay(ROTATION_DELAY); 
+    bool rightLine = false;
     do
-    { // front hasn't detected branches yet
-      frontLine = lineFollower3.getLineData();
-    } while (!frontLine);
+    { 
+      rightLine = lineFollower2.getLineData();
+    } while (!rightLine);
     stop();
 
     // straight till detect block
@@ -324,37 +357,33 @@ public:
 
   void blockAfterGrab()
   {
-    // backward for short time (experiment ?)
-    fullBackward();
-    delay(700);
-    stop();
-
     // rotate 90 deg clockwise
-    clockwise();
-    delay(700); // till front has left the main line
-    bool frontLine = false;
+    leftAnchoredClockwise();
+    delay(ROTATION_DELAY);
+    bool leftLine = false;
     do
-    { // front hasn't detected branches yet
-      frontLine = lineFollower3.getLineData();
-    } while (!frontLine);
+    {
+      leftLine = lineFollower1.getLineData();
+    } while (!leftLine);
     stop();
   }
 
   // Block release
-  void blockBeforeRelease() {
+  void blockBeforeRelease()
+  {
     // rotate 90 deg clockwise
-    clockwise();
-    delay(700); // till front has left the main line
-    bool frontLine = false;
+    rightAnchoredClockwise();
+    delay(ROTATION_DELAY); 
+    bool leftLine = false;
     do
-    { // front hasn't detected branches yet
-      frontLine = lineFollower3.getLineData();
-    } while (!frontLine);
+    { 
+      leftLine = lineFollower1.getLineData();
+    } while (!leftLine);
     stop();
 
     // forward for certain period
     fullForward();
-    delay(1000);
+    delay(FORWARD_DELAY);
     stop();
   }
 
@@ -364,10 +393,21 @@ public:
     grabber.release();
   }
 
-  void blockAfterRelease() {
+  void blockAfterRelease()
+  {
     // backward for certain period
+    fullBackward();
+    delay(FORWARD_DELAY);
+    stop();
 
     // rotate 90 deg anticlockwise
+    rightAnchoredAnticlockwise();
+    delay(ROTATION_DELAY);
+    bool rightLine = false;
+    do {
+      rightLine = lineFollower2.getLineData();
+    } while(!rightLine);
+    stop();
   }
 
   // For debugging
