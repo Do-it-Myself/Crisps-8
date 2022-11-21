@@ -209,12 +209,11 @@ public:
     return (rightLine && veryRightLine && !leftLine && !veryLeftLine);
   }
 
-  void countBranch()
+  void countBranch() // !!!! RESET COUNT TO 0 AFTER EACH LAP
   {
     if (hasLeftBranch())
     {
       currLeftBranchTime = millis();
-      rightBranch = 0; // reset rightBranch as we passed through all leftBranch already
       if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && leftBranch < 2)
       { // enough time has passed -> new branch; <2 condition - in case overcount
         leftBranch += 1;
@@ -223,7 +222,6 @@ public:
     if (hasRightBranch())
     {
       currRightBranchTime = millis();
-      leftBranch = 0; // reset leftBranch as we passed through all leftBranch already
       if (currRightBranchTime - prevRightBranchTime > branchTimeTol && rightBranch < 3)
       { // enough time has passed -> new branch; <3 condition - in case overcount
         rightBranch += 1;
