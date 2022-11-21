@@ -159,7 +159,7 @@ public:
     }
   }
 
-  // Line branch detection
+  // Line branch detection boolean for signals
   bool hasLeftBranch()
   {
     bool veryLeftLine = lineFollower3.getLineData();
@@ -272,7 +272,7 @@ public:
 
   void triggerTunnelPID() // triggered when inTunnel, break when outTunnel
   {
-    while (!outTunnel())
+    while (inTunnel())
     {
       tunnelPID();
     }
