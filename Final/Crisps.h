@@ -12,7 +12,7 @@
 
 // Block
 #define IR_THRESHOLD 780
-#define DENSE_THRESHOLD 10
+#define DENSE_THRESHOLD 11
 
 class Crisps
 {

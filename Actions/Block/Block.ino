@@ -9,7 +9,7 @@
 #define IR_PIN A0
 
 #define IR_THRESHOLD 780
-#define DENSE_THRESHOLD 10
+#define DENSE_THRESHOLD 11
 
 class IR{
 private:
@@ -32,6 +32,7 @@ public:
       analog += analog_reading;
     }
     analog /= 10;
+    Serial.println(analog);
     return (analog < threshold);
   }
 };
@@ -57,7 +58,9 @@ public:
   }
   
   bool denseBlock(int threshold) {
-    return (hc.dist() > threshold);
+    float distance = hc.dist();
+    Serial.println(distance);
+    return (distance > threshold);
   }
 
   double distError(double distanceCm) { // too far (-ve), too close (+ve)
@@ -75,22 +78,35 @@ public:
 IR irBlock(IR_PIN);
 Ultrasound ultrasoundBlock(TRIG_BLOCK, ECHO_BLOCK);
 
-void blockDetection() {
-  if (irBlock.obstacle(IR_THRESHOLD)) { // detected obstacle
-    if (ultrasoundBlock.denseBlock(DENSE_THRESHOLD)) { // dense - red
+ void blockBeforeGrab()
+  {
+    while (!irBlock.obstacle(IR_THRESHOLD))
+    {
+    }
+  }
+
+bool blockDifferentiate() // detect and grab the block, return whether the block is dense or not
+  {
+    bool isDense = true;
+    if (ultrasoundBlock.denseBlock(DENSE_THRESHOLD))
+    { // dense - red
+      Serial.println("Dense - red");
       digitalWrite(RED_LIGHT, HIGH);
       digitalWrite(GREEN_LIGHT, LOW);
       delay(5000);
       digitalWrite(RED_LIGHT, LOW);
     }
-    else { // not dense - green
+    else
+    { // not dense - green
+      Serial.println("Not dense - green");
       digitalWrite(RED_LIGHT, LOW);
       digitalWrite(GREEN_LIGHT, HIGH);
       delay(5000);
       digitalWrite(GREEN_LIGHT, LOW);
+      isDense = false;
     }
+    return isDense;
   }
-}
 
 void setup() {
   Serial.begin(9600);
@@ -98,8 +114,12 @@ void setup() {
   digitalWrite(RED_LIGHT, LOW);
   pinMode(GREEN_LIGHT, OUTPUT);
   digitalWrite(GREEN_LIGHT, LOW);
+  pinMode(IR_PIN, INPUT);
 }
 
 void loop() {
-  blockDetection();
+  blockBeforeGrab();
+  Serial.println("Block detected!");
+  delay(500);
+  blockDifferentiate();
 }
