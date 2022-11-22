@@ -110,9 +110,6 @@ public:
     // make motor stop
     Motor->run(RELEASE);
     currentSpeed = 0;
-
-    // turn off light
-    digitalWrite(lightPin, LOW);
   }
   int getSpeed()
   {
