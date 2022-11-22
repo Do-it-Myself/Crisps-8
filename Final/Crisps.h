@@ -17,6 +17,21 @@
 class Crisps
 {
 public:
+  enum currentTask{
+    lineBeforeTunnel,
+    lineAfterTunnel,
+    blockDensity,
+    blockPickup,
+    rotate,
+    tunnel,
+    blockDropOff
+  };
+  enum block{
+    block1,
+    block2,
+    block3
+  };
+
   LineFollower lineFollower1; // left
   LineFollower lineFollower2; // right
   LineFollower lineFollower3; // front
@@ -413,5 +428,46 @@ public:
   {
     Serial.println(ultrasoundBlock->dist());
     Serial.println(ultrasoundTunnel->dist());
+  }
+
+  void start(){
+    delay(2000);
+
+  }
+  void task(){
+    while block == block1{
+      switch (currentTask){
+        case lineBeforeTunnel:
+        case lineAfterTunnel:
+        case blockDensity:
+        case blockPickup:
+        case tunnel:
+        case rotate:
+        case blockDropOff:
+      }
+    }
+    while block == block2{
+      switch (currentTask){
+        case lineBeforeTunnel:
+        case lineAfterTunnel:
+        case blockDensity:
+        case blockPickup:
+        case tunnel:
+        case rotate:
+        case blockDropOff:
+      }
+    }
+    while block == block3{
+      switch (currentTask){
+        case lineBeforeTunnel:
+        case lineAfterTunnel:
+        case blockDensity:
+        case blockPickup:
+        case tunnel:
+        case rotate:
+        case blockDropOff:
+      }
+    }
+
   }
 };
