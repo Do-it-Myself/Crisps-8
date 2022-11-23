@@ -284,9 +284,7 @@ public:
     return (!veryLeftLine && !veryRightLine);
   }
 
-
-  bool fullFirstFirstBranch()
-  
+  bool fullFirstBranch()
   {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
@@ -305,9 +303,7 @@ public:
     return (!leftLine || !rightLine || !veryLeftLine || !veryRightLine);
   }
 
-
   bool allBlack()
-  
   {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();

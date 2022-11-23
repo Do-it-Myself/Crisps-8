@@ -23,5 +23,4 @@ void setup() {
 
 void loop() {
   robot.task();
-  robot.task();
 }
