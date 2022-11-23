@@ -98,6 +98,9 @@ public:
 
     currentTask = lineBeforeBlock;
     block = block1;
+    delay(2000);
+    fullForward();
+    delay(3000);
   }
 
   // Pure Motion
@@ -460,7 +463,7 @@ public:
 
   }
   void task(){
-    while (block == block1){
+    if (block == block1){
       switch (currentTask){
         case lineBeforeBlock:
           if(!firstRotation && fullBranch()){
@@ -489,7 +492,7 @@ public:
           break;
       }
     }
-    while (block == block2){
+    if (block == block2){
       switch (currentTask){
         case lineBeforeBlock:
           break;
@@ -511,7 +514,7 @@ public:
           break;
       }
     }
-    while (block == block3){
+    if (block == block3){
       switch (currentTask){
         case lineBeforeBlock:
           break;
