@@ -18,11 +18,13 @@ class Crisps
 {
 public:
   enum currentTask{
-    lineBeforeTunnel,
+    lineBeforeBlock,
+    lineBlockTunnel,
     lineAfterTunnel,
     blockDensity,
     blockPickup,
-    rotate,
+    rotateLeft,
+    rotateRight,
     tunnel,
     blockDropOff
   };
@@ -44,7 +46,7 @@ public:
   Grabber grabber;
   static const int maxSpeed = 255;
   bool onLine;
-
+  bool firstRotation = false;
   // tunnel
   float motorRatio = 1;
   unsigned long currentTime, previousTime;
@@ -89,6 +91,9 @@ public:
     digitalWrite(RED_LIGHT, LOW);
     pinMode(GREEN_LIGHT, OUTPUT);
     digitalWrite(GREEN_LIGHT, LOW);
+
+    currentTask = lineBeforeBlock;
+    block = block1;
   }
 
   // Pure Motion
@@ -222,6 +227,22 @@ public:
     bool veryRightLine = lineFollower4.getLineData();
 
     return (rightLine && veryRightLine && !leftLine && !veryLeftLine);
+  }
+  bool fullBranch(){
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
+
+    return (!leftLine && !rightLine && !veryLeftLine && !veryRightLine);
+  }
+  bool allBlack(){
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
+
+    return (leftLine && rightLine && veryLeftLine && veryRightLine);
   }
 
   void countBranch() // !!!! RESET COUNT TO 0 AFTER EACH LAP
@@ -437,23 +458,35 @@ public:
   void task(){
     while block == block1{
       switch (currentTask){
-        case lineBeforeTunnel:
+        case lineBeforeBlock:
+          if(!firstRotation && fullBranch()){
+            //do first rot
+            firstRotation = true;
+            rightAnchoredClockwise();
+            while (!allBlack){
+              delay(5);
+            }
+          }
+          followLine();
         case lineAfterTunnel:
         case blockDensity:
         case blockPickup:
         case tunnel:
-        case rotate:
+        case rotateLeft:
+        case rotateRight:
         case blockDropOff:
       }
     }
     while block == block2{
       switch (currentTask){
-        case lineBeforeTunnel:
+        case lineBeforeBlock:
+        case lineBlockTunnel:
         case lineAfterTunnel:
         case blockDensity:
         case blockPickup:
         case tunnel:
-        case rotate:
+        case rotateLeft:
+        case rotateRight:
         case blockDropOff:
       }
     }
@@ -464,7 +497,8 @@ public:
         case blockDensity:
         case blockPickup:
         case tunnel:
-        case rotate:
+        case rotateLeft:
+        case rotateRight:
         case blockDropOff:
       }
     }
