@@ -262,6 +262,7 @@ public:
 
     return (!boolAverage(leftLine, leftPrevIR) && !boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(rightLine, rightPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
   }
+  
   bool fullBranch()
   {
     bool leftLine = lineFollower1.getLineData();
@@ -495,6 +496,17 @@ public:
     {
     }
     delay(1000);
+  }
+
+  // data collection
+  void dataCollection() {
+    bool hasLeftBranch_bool = hasLeftBranch();
+    bool hasRightBranch_bool = hasRightBranch();
+    bool inTunnel_bool = inTunnel();
+    bool fullBranch_bool = fullBranch();
+    bool allBlack_bool = allBlack();
+    
+    countBranch();
   }
 
   void task()

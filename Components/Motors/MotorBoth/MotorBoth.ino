@@ -5,13 +5,19 @@
 #define AMBER_LIGHT 8
 
 class Motors{
+private:
+  int lightPin;
 public:
   // class field
   Adafruit_MotorShield MotorShield = Adafruit_MotorShield();
   Adafruit_DCMotor *Motor;
-  int lightPin;
+  int currentSpeed;
+  bool goingForward;
+  double prevFlash = 0;
+  double currFlash;
 
   // constructor
+  Motors() = default;
   Motors(int pin, int light)
   {
     Motor = MotorShield.getMotor(pin);
@@ -37,7 +43,19 @@ public:
 
     // configure amber light
     pinMode(lightPin, OUTPUT);
+    digitalWrite(lightPin, LOW);
+  }
 
+  void flash() 
+  {
+    currFlash = millis();
+    if (currFlash - prevFlash > 1000) {
+      // flash light
+      digitalWrite(lightPin, !digitalRead(lightPin));
+
+      // reset prevFlash
+      prevFlash = currFlash;
+    }
   }
 
   void forward(int speed)
@@ -45,9 +63,11 @@ public:
     // set speed of motor
     Motor->setSpeed(speed);
     Motor->run(FORWARD);
-
-    // turn on light
-    digitalWrite(lightPin, HIGH);
+    goingForward = true;
+    currentSpeed = speed;
+    
+    // flash light
+    flash();
   }
 
   void backward(int speed)
@@ -55,6 +75,8 @@ public:
     // set speed of motor
     Motor->setSpeed(speed);
     Motor->run(BACKWARD);
+    currentSpeed = 0;
+    goingForward = false;
 
     // turn on light
     digitalWrite(lightPin, HIGH);
@@ -64,16 +86,20 @@ public:
   {
     // make motor stop
     Motor->run(RELEASE);
-
-    // turn off light
-    digitalWrite(lightPin, LOW);
+    currentSpeed = 0;
+  }
+  
+  int getSpeed()
+  {
+    return currentSpeed;
   }
 };
 
 Motors motorL(1, AMBER_LIGHT);
 Motors motorR(2, AMBER_LIGHT);
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   motorL.begin();
   motorR.begin();
@@ -97,5 +123,4 @@ void loop()
   motorL.forward(FAST);
   motorR.forward(FAST);
   delay(TIME);
-
 }

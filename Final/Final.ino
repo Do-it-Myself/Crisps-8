@@ -17,9 +17,9 @@ Ultrasound ultraTunnel(TRIG_TUNNEL,ECHO_TUNNEL);
 void setup() {
   Serial.begin(9600);
   robot = Crisps(&ultraBlock,&ultraTunnel);
+  robot.button();
 }
 
 void loop() {
-  Serial.println("Ultrasound:");
   robot.task();
 }
