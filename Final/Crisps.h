@@ -20,26 +20,29 @@ bool rightPrevIR[2] = {0, 0};
 bool veryLeftPrevIR[2] = {0, 0};
 bool veryRightPrevIR[2] = {0, 0};
 
+enum currenttask
+{
+  lineBeforeBlock,
+  lineBlockTunnel,
+  lineAfterTunnel,
+  blockDensity,
+  blockPickup,
+  rotateLeft,
+  rotateRight,
+  tunnel,
+  blockDropOff
+};
+enum Block
+{
+  block1,
+  block2,
+  block3
+};
+
+
 class Crisps
 {
 public:
-  enum currentTask
-  {
-    lineBeforeTunnel,
-    lineAfterTunnel,
-    blockDensity,
-    blockPickup,
-    rotate,
-    tunnel,
-    blockDropOff
-  };
-  enum block
-  {
-    block1,
-    block2,
-    block3
-  };
-
   LineFollower lineFollower1; // left
   LineFollower lineFollower2; // right
   LineFollower lineFollower3; // front
@@ -52,7 +55,7 @@ public:
   Grabber grabber;
   static const int maxSpeed = 255;
   bool onLine;
-
+  bool firstRotation = false;
   // tunnel
   float motorRatio = 1;
   unsigned long currentTime, previousTime;
@@ -67,6 +70,9 @@ public:
   double prevRightBranchTime = 0;
   double currRightBranchTime = 0;
   double branchTimeTol = 2000; // 2 s
+
+  currenttask currentTask;
+  Block block;
 
   Crisps() = default;
   Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) : lineFollower1(LINEFOLLOWER_1), // this is the line follower on the left for following the main line
@@ -100,6 +106,10 @@ public:
 
     // Button
     pinMode(BUTTON_PIN, INPUT);
+
+    // Task
+    currentTask = lineBeforeBlock;
+    block = block1;
   }
 
   // Pure Motion
@@ -251,6 +261,25 @@ public:
     bool veryRightLine = lineFollower4.getLineData();
 
     return (!boolAverage(leftLine, leftPrevIR) && !boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(rightLine, rightPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
+  }
+  bool fullBranch()
+  {
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
+
+    return (!leftLine && !rightLine && !veryLeftLine && !veryRightLine);
+  }
+
+  bool allBlack()
+  {
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
+
+    return (leftLine && rightLine && veryLeftLine && veryRightLine);
   }
 
   void countBranch() // !!!! RESET COUNT TO 0 AFTER EACH LAP
@@ -458,57 +487,145 @@ public:
   {
     delay(2000);
   }
-
-  // button to trigger robot begin
-  void button() {
-    while (digitalRead(BUTTON_PIN) == 1) {}
-    delay(1000);
-  }
-
-  // task switching
+  
   void task()
   {
-    while
-      block == block1
+    while (block == block1)
+    {
+      switch (currentTask)
       {
-        switch (currentTask)
+      case lineBeforeBlock:
+        if (!firstRotation && fullBranch())
         {
-        case lineBeforeTunnel:
-        case lineAfterTunnel:
-        case blockDensity:
-        case blockPickup:
-        case tunnel:
-        case rotate:
-        case blockDropOff:
+          // do first rot
+          firstRotation = true;
+          rightAnchoredClockwise();
+          while (!allBlack())
+          {
+            delay(5);
+          }
         }
+        followLine();
+        break;
+      case lineAfterTunnel:
+        break;
+      case blockDensity:
+        break;
+      case blockPickup:
+        break;
+      case tunnel:
+        break;
+      case rotateLeft:
+        break;
+      case rotateRight:
+        break;
+      case blockDropOff:
+        break;
       }
-    while
-      block == block2
+    }
+    while (block == block2)
+    {
+      switch (currentTask)
       {
-        switch (currentTask)
-        {
-        case lineBeforeTunnel:
-        case lineAfterTunnel:
-        case blockDensity:
-        case blockPickup:
-        case tunnel:
-        case rotate:
-        case blockDropOff:
-        }
+      case lineBeforeBlock:
+        break;
+      case lineBlockTunnel:
+        break;
+      case lineAfterTunnel:
+        break;
+      case blockDensity:
+        break;
+      case blockPickup:
+        break;
+      case tunnel:
+        break;
+      case rotateLeft:
+        break;
+      case rotateRight:
+        break;
+      case blockDropOff:
+        break;
       }
-    while
-      block == block3
+    }
+    while (block == block3)
+    {
+      switch (currentTask)
       {
-        switch (currentTask)
-        {
-        case lineBeforeTunnel:
-        case lineAfterTunnel:
-        case blockDensity:
-        case blockPickup:
-        case tunnel:
-        case rotate:
-        case blockDropOff:
-        }
+      case lineBeforeBlock:
+        break;
+      case lineBlockTunnel:
+        break;
+      case lineAfterTunnel:
+        break;
+      case blockDensity:
+        break;
+      case blockPickup:
+        break;
+      case tunnel:
+        break;
+      case rotateLeft:
+        break;
+      case rotateRight:
+        break;
+      case blockDropOff:
+        break;
       }
+    }
+
+    // button to trigger robot begin
+    void button()
+    {
+      while (digitalRead(BUTTON_PIN) == 1)
+      {
+      }
+      delay(1000);
+    }
+
+    // task switching
+    void task()
+    {
+      while
+        (block == block1)
+        {
+          switch (currentTask)
+          {
+          case lineBeforeTunnel:
+          case lineAfterTunnel:
+          case blockDensity:
+          case blockPickup:
+          case tunnel:
+          case rotate:
+          case blockDropOff:
+          }
+        }
+      while
+        (block == block2)
+        {
+          switch (currentTask)
+          {
+          case lineBeforeTunnel:
+          case lineAfterTunnel:
+          case blockDensity:
+          case blockPickup:
+          case tunnel:
+          case rotate:
+          case blockDropOff:
+          }
+        }
+      while
+        (block == block3)
+        {
+          switch (currentTask)
+          {
+          case lineBeforeTunnel:
+          case lineAfterTunnel:
+          case blockDensity:
+          case blockPickup:
+          case tunnel:
+          case rotate:
+          case blockDropOff:
+          }
+        }
+    }
   }
 };
