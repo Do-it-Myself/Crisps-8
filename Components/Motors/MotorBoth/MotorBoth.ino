@@ -49,6 +49,10 @@ public:
   void flash() 
   {
     currFlash = millis();
+    Serial.print("prev:");
+    Serial.println(prevFlash);
+    Serial.print("curr:");
+    Serial.println(currFlash);
     if (currFlash - prevFlash > 1000) {
       // flash light
       digitalWrite(lightPin, !digitalRead(lightPin));
@@ -79,7 +83,7 @@ public:
     goingForward = false;
 
     // turn on light
-    digitalWrite(lightPin, HIGH);
+    flash();
   }
 
   void stop()
@@ -107,20 +111,5 @@ void setup()
 
 void loop()
 {
-  Serial.println("Backward slow");
-  motorL.backward(SLOW);
-  motorR.backward(SLOW);
-  delay(TIME);
-  Serial.println("Backward fast");
-  motorL.backward(FAST);
   motorR.backward(FAST);
-  delay(TIME);
-  Serial.println("Forward slow");
-  motorL.forward(SLOW);
-  motorR.forward(SLOW);
-  delay(TIME);
-  Serial.println("Forward fast");
-  motorL.forward(FAST);
-  motorR.forward(FAST);
-  delay(TIME);
 }
