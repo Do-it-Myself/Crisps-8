@@ -14,27 +14,34 @@
 #define IR_THRESHOLD 780
 #define DENSE_THRESHOLD 11
 
-  enum currenttask{
-    lineBeforeBlock,
-    lineBlockTunnel,
-    lineAfterTunnel,
-    blockDensity,
-    blockPickup,
-    rotateLeft,
-    rotateRight,
-    tunnel,
-    blockDropOff
-  };
-  enum Block{
-    block1,
-    block2,
-    block3
-  };
-  
+// IR
+bool leftPrevIR[2] = {0, 0};
+bool rightPrevIR[2] = {0, 0};
+bool veryLeftPrevIR[2] = {0, 0};
+bool veryRightPrevIR[2] = {0, 0};
+
+enum currenttask
+{
+  lineBeforeBlock,
+  lineBlockTunnel,
+  lineAfterTunnel,
+  blockDensity,
+  blockPickup,
+  rotateLeft,
+  rotateRight,
+  tunnel,
+  blockDropOff
+};
+enum Block
+{
+  block1,
+  block2,
+  block3
+};
+
 class Crisps
 {
 public:
-
   LineFollower lineFollower1; // left
   LineFollower lineFollower2; // right
   LineFollower lineFollower3; // very left
@@ -63,14 +70,14 @@ public:
   double currRightBranchTime = 0;
   double branchTimeTol = 2000; // 2 s
 
-  currenttask currentTask;
-  Block block;
+  int currentTask;
+  int block;
 
   Crisps() = default;
   Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) : lineFollower1(LINEFOLLOWER_1), // this is the line follower on the left for following the main line
                                                             lineFollower2(LINEFOLLOWER_2), // this is the line follower on the right for following the main line
-                                                            lineFollower3(LINEFOLLOWER_3), //very left
-                                                            lineFollower4(LINEFOLLOWER_4), //very right
+                                                            lineFollower3(LINEFOLLOWER_3), // very left
+                                                            lineFollower4(LINEFOLLOWER_4), // very right
                                                             motorL(MOTOR_L, AMBER_LIGHT),
                                                             motorR(MOTOR_R, AMBER_LIGHT),
                                                             irBlock(IR_PIN),
@@ -96,12 +103,21 @@ public:
     pinMode(GREEN_LIGHT, OUTPUT);
     digitalWrite(GREEN_LIGHT, LOW);
 
-    currentTask = lineBeforeBlock;
-    block = block1;
-    delay(2000);
-    fullForward();
-    delay(1000);
+    // Button
+    pinMode(BUTTON_PIN, INPUT);
 
+    // Task
+    currentTask = 0;
+    block = 0;
+  }
+
+  // Begin
+  void begin()
+  {
+    Serial.println("Begin");
+    fullForward();
+    delay(1500);
+    Serial.println("Done begin");
   }
 
   // Pure Motion
@@ -150,13 +166,13 @@ public:
     motorR.backward(maxSpeed);
   }
 
-  void rightAnchoredAnticlockwise() 
+  void rightAnchoredAnticlockwise()
   {
     motorL.backward(maxSpeed);
     motorR.stop();
   }
 
-  void rightAnchoredClockwise() 
+  void rightAnchoredClockwise()
   {
     motorL.forward(maxSpeed);
     motorR.stop();
@@ -167,7 +183,8 @@ public:
   {
     int step = 65;
     bool leftLine = lineFollower1.getLineData();
-    bool rightLine = lineFollower2.getLineData();;
+    bool rightLine = lineFollower2.getLineData();
+    ;
     if (!leftLine || !rightLine)
     {
       onLine = false;
@@ -210,6 +227,24 @@ public:
   }
 
   // Line branch detection boolean for signals
+  bool boolAverage(bool currLine, bool arrLine[3])
+  {
+    arrLine[0] = arrLine[1];
+    arrLine[1] = arrLine[2];
+    arrLine[2] = currLine;
+
+    int sum = 0;
+    for (int i = 0; i < 3; i++)
+    {
+      sum += (int)arrLine[i];
+    }
+    if (sum > 1)
+    {
+      return 1;
+    }
+    return 0;
+  }
+
   bool hasLeftBranch()
   {
     bool leftLine = lineFollower1.getLineData();
@@ -217,7 +252,7 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (leftLine && veryLeftLine && !rightLine && !veryRightLine);
+    return (!boolAverage(leftLine, leftPrevIR) && !boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(rightLine, rightPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   bool hasRightBranch()
@@ -227,17 +262,49 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (rightLine && veryRightLine && !leftLine && !veryLeftLine);
+    return (boolAverage(leftLine, leftPrevIR) && boolAverage(veryLeftLine, veryLeftPrevIR) && !boolAverage(rightLine, rightPrevIR) && !boolAverage(veryRightLine, veryRightPrevIR));
   }
-  bool fullBranch(){
+
+  bool fullBranch()
+  {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (!leftLine && !rightLine && !veryLeftLine && !veryRightLine);
+    Serial.print("L");
+    Serial.println(leftLine);
+    Serial.print("R");
+    Serial.println(rightLine);
+    Serial.print("VL");
+    Serial.println(veryLeftLine);
+    Serial.print("VR");
+    Serial.println(veryRightLine);
+
+    return (!veryLeftLine && !veryRightLine);
   }
-  bool allBlack(){
+
+  bool fullFirstBranch()
+  {
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
+
+    Serial.print("L");
+    Serial.println(leftLine);
+    Serial.print("R");
+    Serial.println(rightLine);
+    Serial.print("VL");
+    Serial.println(veryLeftLine);
+    Serial.print("VR");
+    Serial.println(veryRightLine);
+
+    return (!leftLine || !rightLine || !veryLeftLine || !veryRightLine);
+  }
+
+  bool allBlack()
+  {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
@@ -351,10 +418,10 @@ public:
   {
     // rotate 90 deg anti-clockwise
     leftAnchoredAnticlockwise();
-    delay(ROTATION_DELAY); 
+    delay(ROTATION_DELAY);
     bool rightLine = false;
     do
-    { 
+    {
       rightLine = lineFollower2.getLineData();
     } while (!rightLine);
     stop();
@@ -408,10 +475,10 @@ public:
   {
     // rotate 90 deg clockwise
     rightAnchoredClockwise();
-    delay(ROTATION_DELAY); 
+    delay(ROTATION_DELAY);
     bool leftLine = false;
     do
-    { 
+    {
       leftLine = lineFollower1.getLineData();
     } while (!leftLine);
     stop();
@@ -439,99 +506,134 @@ public:
     rightAnchoredAnticlockwise();
     delay(ROTATION_DELAY);
     bool rightLine = false;
-    do {
+    do
+    {
       rightLine = lineFollower2.getLineData();
-    } while(!rightLine);
+    } while (!rightLine);
     stop();
   }
 
-  // For debugging
-  void debug()
+  // beginning of program
+  void start()
   {
-    Serial.println(ultrasoundBlock->dist());
-    Serial.println(ultrasoundTunnel->dist());
-  }
-
-  void start(){
     delay(2000);
-
   }
-  void task(){
-    if (block == block1){
-      switch (currentTask){
-        case lineBeforeBlock:
-          Serial.println(fullBranch());
-          if(!firstRotation && fullBranch()){
-            //do first rot
-            Serial.println("trigger");
-            firstRotation = true;
-            rightAnchoredClockwise();
-            while (!allBlack()){
-              delay(5);
-            }
-          }
-          followLine();
-          break;
-        case lineAfterTunnel:
-          break;
-        case blockDensity:
-          break;
-        case blockPickup:
-          break;
-        case tunnel:
-          break;
-        case rotateLeft:
-          break;
-        case rotateRight:
-          break;
-        case blockDropOff:
-          break;
-      }
-    }
-    if (block == block2){
-      switch (currentTask){
-        case lineBeforeBlock:
-          break;
-        case lineBlockTunnel:
-          break;
-        case lineAfterTunnel:
-          break;
-        case blockDensity:
-          break;
-        case blockPickup:
-          break;
-        case tunnel:
-          break;
-        case rotateLeft:
-          break;
-        case rotateRight:
-          break;
-        case blockDropOff:
-          break;
-      }
-    }
-    if (block == block3){
-      switch (currentTask){
-        case lineBeforeBlock:
-          break;
-        case lineBlockTunnel:
-          break;
-        case lineAfterTunnel:
-          break;
-        case blockDensity:
-          break;
-        case blockPickup:
-          break;
-        case tunnel:
-          break;
-        case rotateLeft:
-          break;
-        case rotateRight:
-          break;
-        case blockDropOff:
-          break;
-      }
-    }
 
+  // button to trigger robot begin
+  void button()
+  {
+    while (digitalRead(BUTTON_PIN) == 1)
+    {
+    }
+    delay(1000);
+  }
+
+  // data collection
+  void dataCollection()
+  {
+    bool hasLeftBranch_bool = hasLeftBranch();
+    bool hasRightBranch_bool = hasRightBranch();
+    bool inTunnel_bool = inTunnel();
+    bool fullBranch_bool = fullBranch();
+    bool allBlack_bool = allBlack();
+
+    countBranch();
+  }
+
+  void task()
+  {
+    if (block == block1)
+    {
+      //Serial.println("Before currentTask");
+      switch (currentTask)
+      {
+        
+      case lineBeforeBlock:
+        //Serial.println("After currentTask");
+        //Serial.print("Full branch?");
+        //Serial.println(fullBranch());
+        if (!firstRotation && fullFirstBranch())
+        {
+          // do first rot
+          Serial.println("Trigger");
+          firstRotation = true;
+          rightAnchoredClockwise();
+          delay(1000);
+          bool leftLine, rightLine;
+          do {
+            leftLine = lineFollower1.getLineData();
+            rightLine = lineFollower2.getLineData();
+            Serial.print(leftLine);
+            Serial.println(rightLine);
+            delay(5);
+          } while (leftLine && rightLine);
+          Serial.println("Triggered");
+        }
+        followLine();
+        break;
+      case lineAfterTunnel:
+        break;
+      case blockDensity:
+        break;
+      case blockPickup:
+        break;
+      case tunnel:
+        break;
+      case rotateLeft:
+        break;
+      case rotateRight:
+        break;
+      case blockDropOff:
+        break;
+      }
+    }
+    if (block == block2)
+    {
+      switch (currentTask)
+      {
+      case lineBeforeBlock:
+        break;
+      case lineBlockTunnel:
+        break;
+      case lineAfterTunnel:
+        break;
+      case blockDensity:
+        break;
+      case blockPickup:
+        break;
+      case tunnel:
+        break;
+      case rotateLeft:
+        break;
+      case rotateRight:
+        break;
+      case blockDropOff:
+        break;
+      }
+    }
+    if (block == block3)
+    {
+      switch (currentTask)
+      {
+      case lineBeforeBlock:
+        break;
+      case lineBlockTunnel:
+        break;
+      case lineAfterTunnel:
+        break;
+      case blockDensity:
+        break;
+      case blockPickup:
+        break;
+      case tunnel:
+        break;
+      case rotateLeft:
+        break;
+      case rotateRight:
+        break;
+      case blockDropOff:
+        break;
+      }
+    }
   }
 };
