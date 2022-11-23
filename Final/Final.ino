@@ -21,6 +21,5 @@ void setup() {
 
 void loop() {
   Serial.println("Ultrasound:");
-  robot.debug();
-  delay(2000);
+  robot.task();
 }

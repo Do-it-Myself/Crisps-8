@@ -14,10 +14,7 @@
 #define IR_THRESHOLD 780
 #define DENSE_THRESHOLD 11
 
-class Crisps
-{
-public:
-  enum currentTask{
+  enum currenttask{
     lineBeforeBlock,
     lineBlockTunnel,
     lineAfterTunnel,
@@ -28,11 +25,15 @@ public:
     tunnel,
     blockDropOff
   };
-  enum block{
+  enum Block{
     block1,
     block2,
     block3
   };
+  
+class Crisps
+{
+public:
 
   LineFollower lineFollower1; // left
   LineFollower lineFollower2; // right
@@ -61,6 +62,9 @@ public:
   double prevRightBranchTime = 0;
   double currRightBranchTime = 0;
   double branchTimeTol = 2000; // 2 s
+
+  currenttask currentTask;
+  Block block;
 
   Crisps() = default;
   Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) : lineFollower1(LINEFOLLOWER_1), // this is the line follower on the left for following the main line
@@ -456,50 +460,77 @@ public:
 
   }
   void task(){
-    while block == block1{
+    while (block == block1){
       switch (currentTask){
         case lineBeforeBlock:
           if(!firstRotation && fullBranch()){
             //do first rot
             firstRotation = true;
             rightAnchoredClockwise();
-            while (!allBlack){
+            while (!allBlack()){
               delay(5);
             }
           }
           followLine();
+          break;
         case lineAfterTunnel:
+          break;
         case blockDensity:
+          break;
         case blockPickup:
+          break;
         case tunnel:
+          break;
         case rotateLeft:
+          break;
         case rotateRight:
+          break;
         case blockDropOff:
+          break;
       }
     }
-    while block == block2{
+    while (block == block2){
       switch (currentTask){
         case lineBeforeBlock:
+          break;
         case lineBlockTunnel:
+          break;
         case lineAfterTunnel:
+          break;
         case blockDensity:
+          break;
         case blockPickup:
+          break;
         case tunnel:
+          break;
         case rotateLeft:
+          break;
         case rotateRight:
+          break;
         case blockDropOff:
+          break;
       }
     }
-    while block == block3{
+    while (block == block3){
       switch (currentTask){
-        case lineBeforeTunnel:
+        case lineBeforeBlock:
+          break;
+        case lineBlockTunnel:
+          break;
         case lineAfterTunnel:
+          break;
         case blockDensity:
+          break;
         case blockPickup:
+          break;
         case tunnel:
+          break;
         case rotateLeft:
+          break;
         case rotateRight:
+          break;
         case blockDropOff:
+          break;
       }
     }
 
