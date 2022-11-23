@@ -110,6 +110,9 @@ public:
     // Task
     currentTask = lineBeforeBlock;
     block = block1;
+    delay(2000);
+    fullForward();
+    delay(3000);
   }
 
   // Pure Motion
@@ -508,24 +511,18 @@ public:
     
     countBranch();
   }
-
-  void task()
-  {
-    while (block == block1)
-    {
-      switch (currentTask)
-      {
-      case lineBeforeBlock:
-        if (!firstRotation && fullBranch())
-        {
-          // do first rot
-          firstRotation = true;
-          rightAnchoredClockwise();
-          while (!allBlack())
-          {
-            delay(5);
+  void task(){
+    if (block == block1){
+      switch (currentTask){
+        case lineBeforeBlock:
+          if(!firstRotation && fullBranch()){
+            //do first rot
+            firstRotation = true;
+            rightAnchoredClockwise();
+            while (!allBlack()){
+              delay(5);
+            }
           }
-        }
         followLine();
         break;
       case lineAfterTunnel:
@@ -544,52 +541,48 @@ public:
         break;
       }
     }
-    while (block == block2)
-    {
-      switch (currentTask)
-      {
-      case lineBeforeBlock:
-        break;
-      case lineBlockTunnel:
-        break;
-      case lineAfterTunnel:
-        break;
-      case blockDensity:
-        break;
-      case blockPickup:
-        break;
-      case tunnel:
-        break;
-      case rotateLeft:
-        break;
-      case rotateRight:
-        break;
-      case blockDropOff:
-        break;
+    while (block == block2){
+      switch (currentTask){
+        case lineBeforeBlock:
+          break;
+        case lineBlockTunnel:
+          break;
+        case lineAfterTunnel:
+          break;
+        case blockDensity:
+          break;
+        case blockPickup:
+          break;
+        case tunnel:
+          break;
+        case rotateLeft:
+          break;
+        case rotateRight:
+          break;
+        case blockDropOff:
+          break;
       }
     }
-    while (block == block3)
-    {
-      switch (currentTask)
-      {
-      case lineBeforeBlock:
-        break;
-      case lineBlockTunnel:
-        break;
-      case lineAfterTunnel:
-        break;
-      case blockDensity:
-        break;
-      case blockPickup:
-        break;
-      case tunnel:
-        break;
-      case rotateLeft:
-        break;
-      case rotateRight:
-        break;
-      case blockDropOff:
-        break;
+    while (block == block3){
+      switch (currentTask){
+        case lineBeforeBlock:
+          break;
+        case lineBlockTunnel:
+          break;
+        case lineAfterTunnel:
+          break;
+        case blockDensity:
+          break;
+        case blockPickup:
+          break;
+        case tunnel:
+          break;
+        case rotateLeft:
+          break;
+        case rotateRight:
+          break;
+        case blockDropOff:
+          break;
       }
     }
   }
