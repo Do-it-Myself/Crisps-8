@@ -487,7 +487,16 @@ public:
   {
     delay(2000);
   }
-  
+
+// button to trigger robot begin
+  void button()
+  {
+    while (digitalRead(BUTTON_PIN) == 1)
+    {
+    }
+    delay(1000);
+  }
+
   void task()
   {
     while (block == block1)
@@ -570,62 +579,6 @@ public:
       case blockDropOff:
         break;
       }
-    }
-
-    // button to trigger robot begin
-    void button()
-    {
-      while (digitalRead(BUTTON_PIN) == 1)
-      {
-      }
-      delay(1000);
-    }
-
-    // task switching
-    void task()
-    {
-      while
-        (block == block1)
-        {
-          switch (currentTask)
-          {
-          case lineBeforeTunnel:
-          case lineAfterTunnel:
-          case blockDensity:
-          case blockPickup:
-          case tunnel:
-          case rotate:
-          case blockDropOff:
-          }
-        }
-      while
-        (block == block2)
-        {
-          switch (currentTask)
-          {
-          case lineBeforeTunnel:
-          case lineAfterTunnel:
-          case blockDensity:
-          case blockPickup:
-          case tunnel:
-          case rotate:
-          case blockDropOff:
-          }
-        }
-      while
-        (block == block3)
-        {
-          switch (currentTask)
-          {
-          case lineBeforeTunnel:
-          case lineAfterTunnel:
-          case blockDensity:
-          case blockPickup:
-          case tunnel:
-          case rotate:
-          case blockDropOff:
-          }
-        }
     }
   }
 };
