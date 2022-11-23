@@ -23,15 +23,16 @@ bool veryRightPrevIR[2] = {0, 0};
 enum currenttask
 {
   lineBeforeBlock,
-  lineBlockTunnel,
-  lineAfterTunnel,
   blockDensity,
   blockPickup,
+  lineBlockTunnel,
+  tunnel,
+  lineAfterTunnel,
   rotateLeft,
   rotateRight,
-  tunnel,
   blockDropOff
 };
+
 enum Block
 {
   block1,
@@ -414,6 +415,11 @@ public:
   }
 
   // Block collection
+  bool blockDetected()
+  {
+    return irBlock.obstacle(IR_THRESHOLD);
+  }
+
   void blockBeforeGrab()
   {
     // rotate 90 deg anti-clockwise
@@ -529,29 +535,38 @@ public:
   }
 
   // data collection
-  void dataCollection()
+  void dataCollection(int &task_input)
   {
     bool hasLeftBranch_bool = hasLeftBranch();
     bool hasRightBranch_bool = hasRightBranch();
+    //bool blockDetected_bool = blockDetected();
+    bool blockDetected_bool = false;
     bool inTunnel_bool = inTunnel();
     bool fullBranch_bool = fullBranch();
     bool allBlack_bool = allBlack();
-
     countBranch();
+
+    if (blockDetected_bool)
+    {
+      task_input = blockDensity;
+    }
+
+    if (inTunnel_bool) 
+    {
+      task_input = tunnel;
+    }
   }
 
   void task(int &task_input)
   {
     if (block == block1)
     {
-      //Serial.println("Before currentTask");
+      // Serial.println("Before currentTask");
       switch (task_input)
       {
-        
+
       case lineBeforeBlock:
-        //Serial.println("After currentTask");
-        //Serial.print("Full branch?");
-        //Serial.println(fullBranch());
+        Serial.println("LineBeforeBlock");
         if (!firstRotation && fullFirstBranch())
         {
           // do first rot
@@ -560,7 +575,8 @@ public:
           rightAnchoredClockwise();
           delay(1000);
           bool leftLine, rightLine;
-          do {
+          do
+          {
             leftLine = lineFollower1.getLineData();
             rightLine = lineFollower2.getLineData();
             Serial.print(leftLine);
@@ -571,13 +587,25 @@ public:
         }
         followLine();
         break;
-      case lineAfterTunnel:
-        break;
       case blockDensity:
+        Serial.println("blockDensity");
+        task_input = blockPickup;
         break;
       case blockPickup:
+        Serial.println("blockPickup");
+        task_input = lineBlockTunnel;
+        break;
+      case lineBlockTunnel:
+        Serial.println("lineBlockTunnel");
+        followLine();
         break;
       case tunnel:
+        Serial.println("lineBlockTunnel");
+        triggerTunnelPID();
+        task_input = lineAfterTunnel;
+        break;
+      case lineAfterTunnel:
+        followLine();
         break;
       case rotateLeft:
         break;
@@ -593,15 +621,15 @@ public:
       {
       case lineBeforeBlock:
         break;
-      case lineBlockTunnel:
-        break;
-      case lineAfterTunnel:
-        break;
       case blockDensity:
         break;
       case blockPickup:
         break;
+      case lineBlockTunnel:
+        break;
       case tunnel:
+        break;
+      case lineAfterTunnel:
         break;
       case rotateLeft:
         break;
@@ -617,15 +645,15 @@ public:
       {
       case lineBeforeBlock:
         break;
-      case lineBlockTunnel:
-        break;
-      case lineAfterTunnel:
-        break;
       case blockDensity:
         break;
       case blockPickup:
         break;
+      case lineBlockTunnel:
+        break;
       case tunnel:
+        break;
+      case lineAfterTunnel:
         break;
       case rotateLeft:
         break;
