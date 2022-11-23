@@ -71,8 +71,11 @@ public:
   double currRightBranchTime = 0;
   double branchTimeTol = 2000; // 2 s
 
-  currenttask currentTask;
-  Block block;
+  int currentTask;
+  int block;
+  bool blockIsDense;
+  bool blockData_bool = false;
+  bool tunnelData_bool = false;
 
   Crisps() = default;
   Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) : lineFollower1(LINEFOLLOWER_1), // this is the line follower on the left for following the main line
@@ -108,8 +111,8 @@ public:
     pinMode(BUTTON_PIN, INPUT);
 
     // Task
-    currentTask = lineBeforeBlock;
-    block = block1;
+    currentTask = 0;
+    block = 0;
   }
 
   // Begin
@@ -117,7 +120,7 @@ public:
   {
     Serial.println("Begin");
     fullForward();
-    delay(2000);
+    delay(1500);
     Serial.println("Done begin");
   }
 
@@ -286,6 +289,7 @@ public:
   }
 
   bool fullFirstBranch()
+  
   {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
@@ -305,6 +309,7 @@ public:
   }
 
   bool allBlack()
+  
   {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
@@ -442,6 +447,7 @@ public:
 
   bool blockDifferentiate() // detect and grab the block, return whether the block is dense or not
   {
+    stop();
     bool isDense = true;
     if (ultrasoundBlock->denseBlock(DENSE_THRESHOLD))
     { // dense - red
@@ -449,6 +455,7 @@ public:
       digitalWrite(GREEN_LIGHT, LOW);
       delay(5000);
       digitalWrite(RED_LIGHT, LOW);
+      Serial.println("Dense");
     }
     else
     { // not dense - green
@@ -457,9 +464,10 @@ public:
       delay(5000);
       digitalWrite(GREEN_LIGHT, LOW);
       isDense = false;
+      Serial.println("Not Dense");
     }
     // grab foam
-    grabber.grab();
+    //grabber.grab();
     return isDense;
   }
 
@@ -535,36 +543,42 @@ public:
   }
 
   // data collection
-  void dataCollection(int &task_input)
+  void dataCollection()
   {
-    bool hasLeftBranch_bool = hasLeftBranch();
-    bool hasRightBranch_bool = hasRightBranch();
-    //bool blockDetected_bool = blockDetected();
-    bool blockDetected_bool = false;
+    Serial.println("dataCollection");
+    //bool hasLeftBranch_bool = hasLeftBranch(); - DONT UNCOMMENT CUZ THE PROGRAM WILL CRASH
+    //bool hasRightBranch_bool = hasRightBranch(); - DONT UNCOMMENT CUZ THE PROGRAM WILL CRASH
+    bool blockDetected_bool = blockDetected(); 
+    //bool blockDetected_bool = false;
     bool inTunnel_bool = inTunnel();
-    bool fullBranch_bool = fullBranch();
-    bool allBlack_bool = allBlack();
-    countBranch();
-
-    if (blockDetected_bool)
-    {
-      task_input = blockDensity;
+    //bool fullBranch_bool = fullBranch();
+    //bool allBlack_bool = allBlack();
+    //countBranch();
+    Serial.println(currentTask);
+     
+    if (!blockData_bool && blockDetected_bool)
+    { 
+      blockData_bool = true;
+      currentTask = blockDensity;
+      Serial.println("blockDetected_bool");
     }
 
-    if (inTunnel_bool) 
+    if (!tunnelData_bool && inTunnel_bool) 
     {
-      task_input = tunnel;
+      tunnelData_bool = true;
+      currentTask = tunnel;
+      Serial.println("inTunnel_bool");
     }
+    Serial.println(currentTask);
   }
 
-  void task(int &task_input)
+  void task()
   {
     if (block == block1)
     {
-      // Serial.println("Before currentTask");
-      switch (task_input)
+      //Serial.println("Before currentTask");
+      switch (currentTask)
       {
-
       case lineBeforeBlock:
         Serial.println("LineBeforeBlock");
         if (!firstRotation && fullFirstBranch())
@@ -589,11 +603,15 @@ public:
         break;
       case blockDensity:
         Serial.println("blockDensity");
-        task_input = blockPickup;
+        blockIsDense = blockDifferentiate();
+        currentTask = blockPickup;
         break;
       case blockPickup:
         Serial.println("blockPickup");
-        task_input = lineBlockTunnel;
+        fullForward();
+        delay(10);
+        followLine();
+        currentTask = lineBlockTunnel;
         break;
       case lineBlockTunnel:
         Serial.println("lineBlockTunnel");
@@ -602,9 +620,10 @@ public:
       case tunnel:
         Serial.println("lineBlockTunnel");
         triggerTunnelPID();
-        task_input = lineAfterTunnel;
+        currentTask = lineAfterTunnel;
         break;
       case lineAfterTunnel:
+        Serial.println("lineAfterTunnel");
         followLine();
         break;
       case rotateLeft:
@@ -615,9 +634,9 @@ public:
         break;
       }
     }
-    while (block == block2)
+    if (block == block2)
     {
-      switch (task_input)
+      switch (currentTask)
       {
       case lineBeforeBlock:
         break;
@@ -639,9 +658,9 @@ public:
         break;
       }
     }
-    while (block == block3)
+    if (block == block3)
     {
-      switch (task_input)
+      switch (currentTask)
       {
       case lineBeforeBlock:
         break;
