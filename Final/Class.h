@@ -16,7 +16,8 @@
 #define SERVO_2 10
 #define RED_LIGHT 11
 #define GREEN_LIGHT 12
-#define IR_PIN 14
+#define IR_PIN 14 // A0
+#define BUTTON_PIN 15 // A1
 
 #define MOTOR_L 1
 #define MOTOR_R 2
@@ -50,6 +51,8 @@ public:
   Adafruit_DCMotor *Motor;
   int currentSpeed;
   bool goingForward;
+  double prevFlash = 0;
+  double currFlash;
 
   // constructor
   Motors() = default;
@@ -79,6 +82,22 @@ public:
     // configure amber light
     pinMode(lightPin, OUTPUT);
     digitalWrite(lightPin, LOW);
+  }
+
+  void flash() 
+  {
+    currFlash = millis();
+    Serial.print("prev:");
+    Serial.println(prevFlash);
+    Serial.print("curr:");
+    Serial.println(currFlash);
+    if (currFlash - prevFlash > 1000) {
+      // flash light
+      digitalWrite(lightPin, !digitalRead(lightPin));
+
+      // reset prevFlash
+      prevFlash = currFlash;
+    }
   }
 
   void forward(int speed)
