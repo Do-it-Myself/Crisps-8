@@ -37,8 +37,8 @@ public:
 
   LineFollower lineFollower1; // left
   LineFollower lineFollower2; // right
-  LineFollower lineFollower3; // front
-  LineFollower lineFollower4; // back
+  LineFollower lineFollower3; // very left
+  LineFollower lineFollower4; // very right
   Motors motorL;
   Motors motorR;
   IR irBlock;
@@ -69,8 +69,8 @@ public:
   Crisps() = default;
   Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) : lineFollower1(LINEFOLLOWER_1), // this is the line follower on the left for following the main line
                                                             lineFollower2(LINEFOLLOWER_2), // this is the line follower on the right for following the main line
-                                                            lineFollower3(LINEFOLLOWER_3),
-                                                            lineFollower4(LINEFOLLOWER_4),
+                                                            lineFollower3(LINEFOLLOWER_3), //very left
+                                                            lineFollower4(LINEFOLLOWER_4), //very right
                                                             motorL(MOTOR_L, AMBER_LIGHT),
                                                             motorR(MOTOR_R, AMBER_LIGHT),
                                                             irBlock(IR_PIN),
@@ -100,7 +100,8 @@ public:
     block = block1;
     delay(2000);
     fullForward();
-    delay(3000);
+    delay(1000);
+
   }
 
   // Pure Motion
@@ -166,10 +167,7 @@ public:
   {
     int step = 65;
     bool leftLine = lineFollower1.getLineData();
-    bool rightLine = lineFollower2.getLineData();
-    Serial.println(leftLine);
-    Serial.println(rightLine);
-    Serial.println("-----");
+    bool rightLine = lineFollower2.getLineData();;
     if (!leftLine || !rightLine)
     {
       onLine = false;
@@ -184,8 +182,6 @@ public:
         {
           motorL.forward(speedLeft - step);
         }
-        Serial.println("left");
-        Serial.println(motorL.getSpeed());
       }
       else if (leftLine && !rightLine)
       {
@@ -198,8 +194,6 @@ public:
         {
           motorR.forward(speedRight - step);
         }
-        Serial.println("right");
-        Serial.println(motorR.getSpeed());
       }
       else
       {
@@ -466,8 +460,10 @@ public:
     if (block == block1){
       switch (currentTask){
         case lineBeforeBlock:
+          Serial.println(fullBranch());
           if(!firstRotation && fullBranch()){
             //do first rot
+            Serial.println("trigger");
             firstRotation = true;
             rightAnchoredClockwise();
             while (!allBlack()){
