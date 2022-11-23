@@ -13,7 +13,6 @@
 Crisps robot;
 Ultrasound ultraBlock(TRIG_BLOCK,ECHO_BLOCK);
 Ultrasound ultraTunnel(TRIG_TUNNEL,ECHO_TUNNEL);
-int taskTracker = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -24,5 +23,5 @@ void setup() {
 
 void loop() {
   robot.task();
-  robot.task(taskTracker);
+  robot.task();
 }
