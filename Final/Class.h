@@ -16,7 +16,8 @@
 #define SERVO_2 10
 #define RED_LIGHT 11
 #define GREEN_LIGHT 12
-#define IR_PIN 14
+#define IR_PIN 14 // A0
+#define BUTTON_PIN 15 // A1
 
 #define MOTOR_L 1
 #define MOTOR_R 2
