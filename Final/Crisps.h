@@ -309,7 +309,6 @@ public:
   }
 
   bool allBlack()
-  
   {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
