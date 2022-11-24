@@ -15,10 +15,10 @@
 #define DENSE_THRESHOLD 11
 
 // IR
-bool leftPrevIR[2] = {0, 0};
-bool rightPrevIR[2] = {0, 0};
-bool veryLeftPrevIR[2] = {0, 0};
-bool veryRightPrevIR[2] = {0, 0};
+bool leftPrevIR[3] = {0, 0, 0};
+bool rightPrevIR[3] = {0, 0, 0};
+bool veryLeftPrevIR[3] = {0, 0, 0};
+bool veryRightPrevIR[3] = {0, 0, 0};
 
 enum currenttask
 {
@@ -69,7 +69,7 @@ public:
   double currLeftBranchTime = 0;
   double prevRightBranchTime = 0;
   double currRightBranchTime = 0;
-  double branchTimeTol = 2000; // 2 s
+  double branchTimeTol = 1000; // 1 s
 
   int currentTask;
   int block;
@@ -256,7 +256,7 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (!boolAverage(leftLine, leftPrevIR) && !boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(rightLine, rightPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
+    return (!boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   bool hasRightBranch()
@@ -266,7 +266,7 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (boolAverage(leftLine, leftPrevIR) && boolAverage(veryLeftLine, veryLeftPrevIR) && !boolAverage(rightLine, rightPrevIR) && !boolAverage(veryRightLine, veryRightPrevIR));
+    return (boolAverage(veryLeftLine, veryLeftPrevIR) && !boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   bool fullBranch()
@@ -275,16 +275,6 @@ public:
     bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
-
-    Serial.print("L");
-    Serial.println(leftLine);
-    Serial.print("R");
-    Serial.println(rightLine);
-    Serial.print("VL");
-    Serial.println(veryLeftLine);
-    Serial.print("VR");
-    Serial.println(veryRightLine);
-
     return (!veryLeftLine && !veryRightLine);
   }
 
@@ -296,15 +286,6 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    Serial.print("L");
-    Serial.println(leftLine);
-    Serial.print("R");
-    Serial.println(rightLine);
-    Serial.print("VL");
-    Serial.println(veryLeftLine);
-    Serial.print("VR");
-    Serial.println(veryRightLine);
-
     return (!leftLine || !rightLine || !veryLeftLine || !veryRightLine);
   }
 
@@ -315,28 +296,35 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (leftLine && rightLine && veryLeftLine && veryRightLine);
+    return (boolAverage(leftLine, leftPrevIR) && boolAverage(rightLine, rightPrevIR) && boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   void countBranch() // !!!! RESET COUNT TO 0 AFTER EACH LAP
   {
     if (hasLeftBranch())
     {
+      stop();
       currLeftBranchTime = millis();
-      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && leftBranch < 2)
+      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && hasLeftBranch()) // recheck
       { // enough time has passed -> new branch; <2 condition - in case overcount
         leftBranch += 1;
+        Serial.print("Left");
+        Serial.println(leftBranch);
+        prevLeftBranchTime = currLeftBranchTime;
       }
     }
     if (hasRightBranch())
     {
+      stop();
       currRightBranchTime = millis();
-      if (currRightBranchTime - prevRightBranchTime > branchTimeTol && rightBranch < 3)
+      if (currRightBranchTime - prevRightBranchTime > branchTimeTol && hasRightBranch()) // recheck
       { // enough time has passed -> new branch; <3 condition - in case overcount
         rightBranch += 1;
+        Serial.print("Right");
+        Serial.println(rightBranch);
+        prevRightBranchTime = currRightBranchTime;
       }
     }
-    prevRightBranchTime = currRightBranchTime;
   }
 
   // Branches and zones boolean for signals
@@ -412,10 +400,13 @@ public:
 
   void triggerTunnelPID() // triggered when inTunnel, break when outTunnel
   {
+    Serial.println("just trigger");
     while (inTunnel())
     {
       tunnelPID();
+      Serial.println("pid");
     }
+    Serial.println("after trigger");
   }
 
   // Block collection
@@ -544,16 +535,13 @@ public:
   // data collection
   void dataCollection()
   {
-    Serial.println("dataCollection");
-    //bool hasLeftBranch_bool = hasLeftBranch(); - DONT UNCOMMENT CUZ THE PROGRAM WILL CRASH
-    //bool hasRightBranch_bool = hasRightBranch(); - DONT UNCOMMENT CUZ THE PROGRAM WILL CRASH
+    bool hasLeftBranch_bool = hasLeftBranch(); 
+    bool hasRightBranch_bool = hasRightBranch(); 
     bool blockDetected_bool = blockDetected(); 
-    //bool blockDetected_bool = false;
     bool inTunnel_bool = inTunnel();
-    //bool fullBranch_bool = fullBranch();
-    //bool allBlack_bool = allBlack();
-    //countBranch();
-    Serial.println(currentTask);
+    bool fullBranch_bool = fullBranch();
+    bool allBlack_bool = allBlack();
+    countBranch();
      
     if (!blockData_bool && blockDetected_bool)
     { 
@@ -561,14 +549,15 @@ public:
       currentTask = blockDensity;
       Serial.println("blockDetected_bool");
     }
-
+    
+    /*
     if (!tunnelData_bool && inTunnel_bool) 
     {
       tunnelData_bool = true;
       currentTask = tunnel;
       Serial.println("inTunnel_bool");
     }
-    Serial.println(currentTask);
+    */
   }
 
   void task()
@@ -579,7 +568,6 @@ public:
       switch (currentTask)
       {
       case lineBeforeBlock:
-        Serial.println("LineBeforeBlock");
         if (!firstRotation && fullFirstBranch())
         {
           // do first rot
@@ -592,8 +580,6 @@ public:
           {
             leftLine = lineFollower1.getLineData();
             rightLine = lineFollower2.getLineData();
-            Serial.print(leftLine);
-            Serial.println(rightLine);
             delay(5);
           } while (leftLine && rightLine);
           Serial.println("Triggered");
@@ -613,16 +599,21 @@ public:
         currentTask = lineBlockTunnel;
         break;
       case lineBlockTunnel:
-        Serial.println("lineBlockTunnel");
+        //Serial.println("lineBlockTunnel");
         followLine();
         break;
       case tunnel:
-        Serial.println("lineBlockTunnel");
+        //Serial.println("Tunnel");
+        digitalWrite(RED_LIGHT, HIGH); // temporary
+        digitalWrite(GREEN_LIGHT, HIGH); // temporary
         triggerTunnelPID();
+        followLine();
         currentTask = lineAfterTunnel;
         break;
       case lineAfterTunnel:
-        Serial.println("lineAfterTunnel");
+        //Serial.println("lineAfterTunnel");
+        digitalWrite(RED_LIGHT, LOW); // temporary
+        digitalWrite(GREEN_LIGHT, LOW); // temporary
         followLine();
         break;
       case rotateLeft:

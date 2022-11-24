@@ -217,7 +217,9 @@ public:
   }
   
   bool denseBlock(int threshold) {
-    return (hc.dist() > threshold);
+    double distance = hc.dist();
+    Serial.println(distance);
+    return (distance > threshold);
   }
 
   double distError(double distanceCm) { // too far (-ve), too close (+ve)
