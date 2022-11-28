@@ -12,8 +12,8 @@
 #define TRIG_TUNNEL 6
 #define ECHO_TUNNEL 7
 #define AMBER_LIGHT 8
-#define SERVO_1 9
-#define SERVO_2 10
+#define SERVO_1 1
+#define SERVO_2 2
 #define RED_LIGHT 11
 #define GREEN_LIGHT 12
 #define IR_PIN 14 // A0
@@ -171,12 +171,20 @@ public:
     servo.attach(servoPin);
   }
 
+  void detach(){
+    servo.detach();
+  }
+
   void grab() {
     servo.write(0);
   }
 
   void release() {
     servo.write(90);
+  }
+
+  void angle(int ang) {
+    servo.write(ang);
   }
 
 };

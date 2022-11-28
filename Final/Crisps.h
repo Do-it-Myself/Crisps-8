@@ -53,7 +53,7 @@ public:
   Ultrasound *ultrasoundBlock;
   Ultrasound *ultrasoundTunnel;
   Grabber grabber;
-  static const int maxSpeed = 0;
+  static const int maxSpeed = 255;
   bool onLine;
   bool firstRotation = false;
   // tunnel
@@ -94,8 +94,7 @@ public:
     motorL.begin();
     motorR.begin();
 
-    // Grabber
-    grabber.begin();
+ 
 
     // Ultrasound
     ultrasoundBlock = ultraBlock;
@@ -113,14 +112,19 @@ public:
     // Task
     currentTask = 0;
     block = 0;
+
+
   }
 
   // Begin
   void begin()
   {
     Serial.println("Begin");
+    grabber.begin();
     fullForward();
-    delay(2000);
+    grabber.angle(75);
+    delay(1700);
+    grabber.detach();
     Serial.println("Done begin");
   }
 
@@ -185,7 +189,7 @@ public:
   // Line following motion
   void followLine()
   {
-    int step = 65;
+    int step = 60;
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
@@ -469,7 +473,10 @@ public:
       Serial.println("Not Dense");
     }
     // grab foam
-    // grabber.grab();
+    grabber.begin();
+    grabber.angle(25);
+    delay(500);
+    grabber.detach();
     return isDense;
   }
 
@@ -508,7 +515,7 @@ public:
   void blockRelease()
   {
     stop();
-    grabber.release();
+    //grabber.release();
   }
 
   void blockAfterRelease()
@@ -554,9 +561,9 @@ public:
     // bool fullBranch_bool = fullBranch();
     // bool allBlack_bool = allBlack();
     countBranch();
-
-    if (!blockData_bool && blockDetected_bool)
-    {
+     
+    if (!blockData_bool && blockDetected_bool && millis() > 15000)
+    { 
       blockData_bool = true;
       currentTask = blockDensity;
       Serial.println("blockDetected_bool");
@@ -586,7 +593,7 @@ public:
           Serial.println("Trigger");
           firstRotation = true;
           rightAnchoredClockwise();
-          delay(2600);
+          delay(2200);
           bool leftLine, rightLine;
           do
           {
