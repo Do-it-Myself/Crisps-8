@@ -17,10 +17,13 @@ Ultrasound ultraTunnel(TRIG_TUNNEL,ECHO_TUNNEL);
 void setup() {
   Serial.begin(9600);
   robot = Crisps(&ultraBlock,&ultraTunnel);
+  Serial.println("Before button");
   robot.button();
+  Serial.println("After button");
   robot.begin();
 }
 
 void loop() {
   robot.task();
+  robot.dataCollection();
 }

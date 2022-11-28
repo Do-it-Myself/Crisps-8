@@ -15,23 +15,24 @@
 #define DENSE_THRESHOLD 11
 
 // IR
-bool leftPrevIR[2] = {0, 0};
-bool rightPrevIR[2] = {0, 0};
-bool veryLeftPrevIR[2] = {0, 0};
-bool veryRightPrevIR[2] = {0, 0};
+bool leftPrevIR[3] = {0, 0, 0};
+bool rightPrevIR[3] = {0, 0, 0};
+bool veryLeftPrevIR[3] = {0, 0, 0};
+bool veryRightPrevIR[3] = {0, 0, 0};
 
 enum currenttask
 {
   lineBeforeBlock,
-  lineBlockTunnel,
-  lineAfterTunnel,
   blockDensity,
   blockPickup,
+  lineBlockTunnel,
+  tunnel,
+  lineAfterTunnel,
   rotateLeft,
   rotateRight,
-  tunnel,
   blockDropOff
 };
+
 enum Block
 {
   block1,
@@ -68,10 +69,13 @@ public:
   double currLeftBranchTime = 0;
   double prevRightBranchTime = 0;
   double currRightBranchTime = 0;
-  double branchTimeTol = 2000; // 2 s
+  double branchTimeTol = 1000; // 1 s
 
   int currentTask;
   int block;
+  bool blockIsDense;
+  bool blockData_bool = false;
+  bool tunnelData_bool = false;
 
   Crisps() = default;
   Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) : lineFollower1(LINEFOLLOWER_1), // this is the line follower on the left for following the main line
@@ -90,8 +94,7 @@ public:
     motorL.begin();
     motorR.begin();
 
-    // Grabber
-    grabber.begin();
+ 
 
     // Ultrasound
     ultrasoundBlock = ultraBlock;
@@ -109,14 +112,19 @@ public:
     // Task
     currentTask = 0;
     block = 0;
+
+
   }
 
   // Begin
   void begin()
   {
     Serial.println("Begin");
+    grabber.begin();
     fullForward();
-    delay(1500);
+    grabber.angle(75);
+    delay(1700);
+    grabber.detach();
     Serial.println("Done begin");
   }
 
@@ -181,7 +189,7 @@ public:
   // Line following motion
   void followLine()
   {
-    int step = 65;
+    int step = 60;
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
     ;
@@ -252,7 +260,7 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (!boolAverage(leftLine, leftPrevIR) && !boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(rightLine, rightPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
+    return (!boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   bool hasRightBranch()
@@ -262,7 +270,7 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (boolAverage(leftLine, leftPrevIR) && boolAverage(veryLeftLine, veryLeftPrevIR) && !boolAverage(rightLine, rightPrevIR) && !boolAverage(veryRightLine, veryRightPrevIR));
+    return (boolAverage(veryLeftLine, veryLeftPrevIR) && !boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   bool fullBranch()
@@ -271,34 +279,16 @@ public:
     bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
-
-    Serial.print("L");
-    Serial.println(leftLine);
-    Serial.print("R");
-    Serial.println(rightLine);
-    Serial.print("VL");
-    Serial.println(veryLeftLine);
-    Serial.print("VR");
-    Serial.println(veryRightLine);
-
     return (!veryLeftLine && !veryRightLine);
   }
 
   bool fullFirstBranch()
+  
   {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
-
-    Serial.print("L");
-    Serial.println(leftLine);
-    Serial.print("R");
-    Serial.println(rightLine);
-    Serial.print("VL");
-    Serial.println(veryLeftLine);
-    Serial.print("VR");
-    Serial.println(veryRightLine);
 
     return (!leftLine || !rightLine || !veryLeftLine || !veryRightLine);
   }
@@ -310,28 +300,35 @@ public:
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (leftLine && rightLine && veryLeftLine && veryRightLine);
+    return (boolAverage(leftLine, leftPrevIR) && boolAverage(rightLine, rightPrevIR) && boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   void countBranch() // !!!! RESET COUNT TO 0 AFTER EACH LAP
   {
     if (hasLeftBranch())
     {
+      stop();
       currLeftBranchTime = millis();
-      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && leftBranch < 2)
+      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && hasLeftBranch()) // recheck
       { // enough time has passed -> new branch; <2 condition - in case overcount
         leftBranch += 1;
+        Serial.print("Left");
+        Serial.println(leftBranch);
+        prevLeftBranchTime = currLeftBranchTime;
       }
     }
     if (hasRightBranch())
     {
+      stop();
       currRightBranchTime = millis();
-      if (currRightBranchTime - prevRightBranchTime > branchTimeTol && rightBranch < 3)
+      if (currRightBranchTime - prevRightBranchTime > branchTimeTol && hasRightBranch()) // recheck
       { // enough time has passed -> new branch; <3 condition - in case overcount
         rightBranch += 1;
+        Serial.print("Right");
+        Serial.println(rightBranch);
+        prevRightBranchTime = currRightBranchTime;
       }
     }
-    prevRightBranchTime = currRightBranchTime;
   }
 
   // Branches and zones boolean for signals
@@ -407,13 +404,21 @@ public:
 
   void triggerTunnelPID() // triggered when inTunnel, break when outTunnel
   {
+    Serial.println("just trigger");
     while (inTunnel())
     {
       tunnelPID();
+      Serial.println("pid");
     }
+    Serial.println("after trigger");
   }
 
   // Block collection
+  bool blockDetected()
+  {
+    return irBlock.obstacle(IR_THRESHOLD);
+  }
+
   void blockBeforeGrab()
   {
     // rotate 90 deg anti-clockwise
@@ -436,6 +441,7 @@ public:
 
   bool blockDifferentiate() // detect and grab the block, return whether the block is dense or not
   {
+    stop();
     bool isDense = true;
     if (ultrasoundBlock->denseBlock(DENSE_THRESHOLD))
     { // dense - red
@@ -443,6 +449,7 @@ public:
       digitalWrite(GREEN_LIGHT, LOW);
       delay(5000);
       digitalWrite(RED_LIGHT, LOW);
+      Serial.println("Dense");
     }
     else
     { // not dense - green
@@ -451,9 +458,13 @@ public:
       delay(5000);
       digitalWrite(GREEN_LIGHT, LOW);
       isDense = false;
+      Serial.println("Not Dense");
     }
     // grab foam
-    grabber.grab();
+    grabber.begin();
+    grabber.angle(25);
+    delay(500);
+    grabber.detach();
     return isDense;
   }
 
@@ -492,7 +503,7 @@ public:
   void blockRelease()
   {
     stop();
-    grabber.release();
+    //grabber.release();
   }
 
   void blockAfterRelease()
@@ -531,13 +542,29 @@ public:
   // data collection
   void dataCollection()
   {
-    bool hasLeftBranch_bool = hasLeftBranch();
-    bool hasRightBranch_bool = hasRightBranch();
+    bool hasLeftBranch_bool = hasLeftBranch(); 
+    bool hasRightBranch_bool = hasRightBranch(); 
+    bool blockDetected_bool = blockDetected(); 
     bool inTunnel_bool = inTunnel();
     bool fullBranch_bool = fullBranch();
     bool allBlack_bool = allBlack();
-
     countBranch();
+     
+    if (!blockData_bool && blockDetected_bool && millis() > 15000)
+    { 
+      blockData_bool = true;
+      currentTask = blockDensity;
+      Serial.println("blockDetected_bool");
+    }
+    
+    /*
+    if (!tunnelData_bool && inTunnel_bool) 
+    {
+      tunnelData_bool = true;
+      currentTask = tunnel;
+      Serial.println("inTunnel_bool");
+    }
+    */
   }
 
   void task()
@@ -547,37 +574,54 @@ public:
       //Serial.println("Before currentTask");
       switch (currentTask)
       {
-        
       case lineBeforeBlock:
-        //Serial.println("After currentTask");
-        //Serial.print("Full branch?");
-        //Serial.println(fullBranch());
         if (!firstRotation && fullFirstBranch())
         {
           // do first rot
           Serial.println("Trigger");
           firstRotation = true;
           rightAnchoredClockwise();
-          delay(1000);
+          delay(2200);
           bool leftLine, rightLine;
-          do {
+          do
+          {
             leftLine = lineFollower1.getLineData();
             rightLine = lineFollower2.getLineData();
-            Serial.print(leftLine);
-            Serial.println(rightLine);
             delay(5);
           } while (leftLine && rightLine);
           Serial.println("Triggered");
         }
         followLine();
         break;
-      case lineAfterTunnel:
-        break;
       case blockDensity:
+        Serial.println("blockDensity");
+        blockIsDense = blockDifferentiate();
+        currentTask = blockPickup;
         break;
       case blockPickup:
+        Serial.println("blockPickup");
+        fullForward();
+        delay(10);
+        followLine();
+        currentTask = lineBlockTunnel;
+        break;
+      case lineBlockTunnel:
+        //Serial.println("lineBlockTunnel");
+        followLine();
         break;
       case tunnel:
+        //Serial.println("Tunnel");
+        digitalWrite(RED_LIGHT, HIGH); // temporary
+        digitalWrite(GREEN_LIGHT, HIGH); // temporary
+        triggerTunnelPID();
+        followLine();
+        currentTask = lineAfterTunnel;
+        break;
+      case lineAfterTunnel:
+        //Serial.println("lineAfterTunnel");
+        digitalWrite(RED_LIGHT, LOW); // temporary
+        digitalWrite(GREEN_LIGHT, LOW); // temporary
+        followLine();
         break;
       case rotateLeft:
         break;
@@ -593,15 +637,15 @@ public:
       {
       case lineBeforeBlock:
         break;
-      case lineBlockTunnel:
-        break;
-      case lineAfterTunnel:
-        break;
       case blockDensity:
         break;
       case blockPickup:
         break;
+      case lineBlockTunnel:
+        break;
       case tunnel:
+        break;
+      case lineAfterTunnel:
         break;
       case rotateLeft:
         break;
@@ -617,15 +661,15 @@ public:
       {
       case lineBeforeBlock:
         break;
-      case lineBlockTunnel:
-        break;
-      case lineAfterTunnel:
-        break;
       case blockDensity:
         break;
       case blockPickup:
         break;
+      case lineBlockTunnel:
+        break;
       case tunnel:
+        break;
+      case lineAfterTunnel:
         break;
       case rotateLeft:
         break;
