@@ -15,10 +15,10 @@
 #define DENSE_THRESHOLD 11
 
 // IR
-bool leftPrevIR[3] = {0, 0, 0};
-bool rightPrevIR[3] = {0, 0, 0};
-bool veryLeftPrevIR[3] = {0, 0, 0};
-bool veryRightPrevIR[3] = {0, 0, 0};
+bool leftPrevIR[3] = {1, 1, 1};
+bool rightPrevIR[3] = {1, 1, 1};
+bool veryLeftPrevIR[3] = {1, 1, 1};
+bool veryRightPrevIR[3] = {1, 1, 1};
 
 enum currenttask
 {
@@ -53,7 +53,7 @@ public:
   Ultrasound *ultrasoundBlock;
   Ultrasound *ultrasoundTunnel;
   Grabber grabber;
-  static const int maxSpeed = 255;
+  static const int maxSpeed = 0;
   bool onLine;
   bool firstRotation = false;
   // tunnel
@@ -120,7 +120,7 @@ public:
   {
     Serial.println("Begin");
     fullForward();
-    delay(1500);
+    delay(2000);
     Serial.println("Done begin");
   }
 
@@ -188,7 +188,14 @@ public:
     int step = 65;
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
-    ;
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
+
+    Serial.println(leftLine);
+    Serial.println(rightLine);
+    Serial.println(veryLeftLine);
+    Serial.println(veryRightLine);
+    Serial.println("------");
     if (!leftLine || !rightLine)
     {
       onLine = false;
@@ -198,10 +205,12 @@ public:
         if (speedLeft - step < 0)
         {
           motorL.forward(0);
+          motorR.forward(maxSpeed);
         }
         else
         {
           motorL.forward(speedLeft - step);
+          motorR.forward(maxSpeed);
         }
       }
       else if (leftLine && !rightLine)
@@ -210,10 +219,12 @@ public:
         if (speedRight - step < 0)
         {
           motorR.forward(0);
+          motorL.forward(maxSpeed);
         }
         else
         {
           motorR.forward(speedRight - step);
+          motorL.forward(maxSpeed);
         }
       }
       else
@@ -279,7 +290,7 @@ public:
   }
 
   bool fullFirstBranch()
-  
+
   {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
@@ -301,28 +312,29 @@ public:
 
   void countBranch() // !!!! RESET COUNT TO 0 AFTER EACH LAP
   {
-    if (hasLeftBranch())
-    {
-      stop();
-      currLeftBranchTime = millis();
-      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && hasLeftBranch()) // recheck
-      { // enough time has passed -> new branch; <2 condition - in case overcount
-        leftBranch += 1;
-        Serial.print("Left");
-        Serial.println(leftBranch);
-        prevLeftBranchTime = currLeftBranchTime;
-      }
-    }
     if (hasRightBranch())
     {
-      stop();
+      Serial.println("hasRight");
       currRightBranchTime = millis();
       if (currRightBranchTime - prevRightBranchTime > branchTimeTol && hasRightBranch()) // recheck
-      { // enough time has passed -> new branch; <3 condition - in case overcount
+      {                                                                                  // enough time has passed -> new branch; <3 condition - in case overcount
         rightBranch += 1;
         Serial.print("Right");
         Serial.println(rightBranch);
         prevRightBranchTime = currRightBranchTime;
+      }
+    }
+
+    if (hasLeftBranch())
+    {
+      Serial.println("hasLeftz");
+      currLeftBranchTime = millis();
+      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && hasLeftBranch()) // recheck
+      {                                                                               // enough time has passed -> new branch; <2 condition - in case overcount
+        leftBranch += 1;
+        Serial.print("Left");
+        Serial.println(leftBranch);
+        prevLeftBranchTime = currLeftBranchTime;
       }
     }
   }
@@ -457,7 +469,7 @@ public:
       Serial.println("Not Dense");
     }
     // grab foam
-    //grabber.grab();
+    // grabber.grab();
     return isDense;
   }
 
@@ -535,23 +547,23 @@ public:
   // data collection
   void dataCollection()
   {
-    bool hasLeftBranch_bool = hasLeftBranch(); 
-    bool hasRightBranch_bool = hasRightBranch(); 
-    bool blockDetected_bool = blockDetected(); 
-    bool inTunnel_bool = inTunnel();
-    bool fullBranch_bool = fullBranch();
-    bool allBlack_bool = allBlack();
+    // bool hasRightBranch_bool = hasRightBranch();
+    // bool hasLeftBranch_bool = hasLeftBranch();
+    bool blockDetected_bool = blockDetected();
+    // bool inTunnel_bool = inTunnel();
+    // bool fullBranch_bool = fullBranch();
+    // bool allBlack_bool = allBlack();
     countBranch();
-     
+
     if (!blockData_bool && blockDetected_bool)
-    { 
+    {
       blockData_bool = true;
       currentTask = blockDensity;
       Serial.println("blockDetected_bool");
     }
-    
+
     /*
-    if (!tunnelData_bool && inTunnel_bool) 
+    if (!tunnelData_bool && inTunnel_bool)
     {
       tunnelData_bool = true;
       currentTask = tunnel;
@@ -564,7 +576,7 @@ public:
   {
     if (block == block1)
     {
-      //Serial.println("Before currentTask");
+      // Serial.println("Before currentTask");
       switch (currentTask)
       {
       case lineBeforeBlock:
@@ -574,7 +586,7 @@ public:
           Serial.println("Trigger");
           firstRotation = true;
           rightAnchoredClockwise();
-          delay(1000);
+          delay(2600);
           bool leftLine, rightLine;
           do
           {
@@ -599,20 +611,20 @@ public:
         currentTask = lineBlockTunnel;
         break;
       case lineBlockTunnel:
-        //Serial.println("lineBlockTunnel");
+        // Serial.println("lineBlockTunnel");
         followLine();
         break;
       case tunnel:
-        //Serial.println("Tunnel");
-        digitalWrite(RED_LIGHT, HIGH); // temporary
+        // Serial.println("Tunnel");
+        digitalWrite(RED_LIGHT, HIGH);   // temporary
         digitalWrite(GREEN_LIGHT, HIGH); // temporary
         triggerTunnelPID();
         followLine();
         currentTask = lineAfterTunnel;
         break;
       case lineAfterTunnel:
-        //Serial.println("lineAfterTunnel");
-        digitalWrite(RED_LIGHT, LOW); // temporary
+        // Serial.println("lineAfterTunnel");
+        digitalWrite(RED_LIGHT, LOW);   // temporary
         digitalWrite(GREEN_LIGHT, LOW); // temporary
         followLine();
         break;

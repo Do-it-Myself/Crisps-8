@@ -112,6 +112,17 @@ public:
     digitalWrite(lightPin, HIGH);
   }
 
+  void forward_notUpdateSpeed(int speed)
+  {
+    // set speed of motor
+    Motor->setSpeed(speed);
+    Motor->run(FORWARD);
+    goingForward = true;
+    
+    // turn on light
+    digitalWrite(lightPin, HIGH);
+  }
+
   void backward(int speed)
   {
     // set speed of motor

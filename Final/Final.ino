@@ -26,4 +26,5 @@ void setup() {
 void loop() {
   robot.task();
   robot.dataCollection();
+  delay(1000);
 }
