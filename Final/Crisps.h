@@ -83,6 +83,7 @@ public:
   bool blockIsDense;
   bool blockData_bool = false;
   bool tunnelData_bool = false;
+  bool blockReleased_bool = false;
 
   // Motor light
   double currFlash = 0;
@@ -206,13 +207,15 @@ public:
 
   void rotate180() {
     isMoving = true;
+    flash();
     motorL.backward(maxSpeed);
     motorR.forward(maxSpeed);
     delay(500);
+    bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
     do {
-
-    } while (boolAverage(rightLine, rightPrevIR));
+      flash();
+    } while (!leftLine || !rightLine);
     stop();
   }
 
@@ -221,6 +224,7 @@ public:
     isMoving = true;
     motorL.stop();
     motorR.forward(maxSpeed);
+    flash();
   }
 
   void leftAnchoredClockwise()
@@ -228,6 +232,7 @@ public:
     isMoving = true;
     motorL.stop();
     motorR.backward(maxSpeed);
+    flash();
   }
 
   void rightAnchoredAnticlockwise()
@@ -235,6 +240,7 @@ public:
     isMoving = true;
     motorL.backward(maxSpeed);
     motorR.stop();
+    flash();
   }
 
   void rightAnchoredClockwise()
@@ -242,6 +248,7 @@ public:
     isMoving = true;
     motorL.forward(maxSpeed);
     motorR.stop();
+    flash();
   }
 
   // Line following motion
@@ -607,12 +614,6 @@ public:
 
   void blockAfterRelease()
   {
-    // backward for certain period
-    /*
-    fullBackward();
-    delay(FORWARD_DELAY);
-    stop();*/
-
     // rotate 90 deg anticlockwise
     rightAnchoredAnticlockwise();
     delay(ROTATION_DELAY);
@@ -663,15 +664,17 @@ public:
     }
 
     // detect green zone for non-dense block
-    else if (reachedGreenZone_bool && tunnelData_bool && !blockIsDense) 
+    else if (!blockReleased_bool && reachedGreenZone_bool && tunnelData_bool && !blockIsDense) 
     {
+      blockReleased_bool = true;
       Serial.println("reachedGreenZone_bool");
       currentTask = blockDropOff;
     }
 
     // detect red zone for dense block
-    else if (reachedRedZone_bool && tunnelData_bool && blockIsDense) 
+    else if (!blockReleased_bool && reachedRedZone_bool && tunnelData_bool && blockIsDense) 
     {
+      blockReleased_bool = true;
       Serial.println("reachedRedZone_bool");
       currentTask = blockDropOff;
     }
@@ -741,10 +744,12 @@ public:
       case blockDropOff:
         blockBeforeRelease();
         blockRelease();
-        blockAfterRelease();
+        blockAfterRelease();\
         currentTask = end;
         break;
       case end:
+        stop();
+      /*
         if (blockIsDense) {
           rotate180();
           int currentLeftBranch = leftBranch;
@@ -762,6 +767,7 @@ public:
           }
           stop();
         }
+        */
         break;
       }
     }
