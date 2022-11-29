@@ -544,7 +544,7 @@ public:
     { // dense - red
       digitalWrite(RED_LIGHT, HIGH);
       digitalWrite(GREEN_LIGHT, LOW);
-      delay(1000); // change!!
+      delay(5000); // change!!
       digitalWrite(RED_LIGHT, LOW);
       Serial.println("Dense");
     }
@@ -552,7 +552,7 @@ public:
     { // not dense - green
       digitalWrite(RED_LIGHT, LOW);
       digitalWrite(GREEN_LIGHT, HIGH);
-      delay(1000); // change!!
+      delay(5000); // change!!
       digitalWrite(GREEN_LIGHT, LOW);
       isDense = false;
       Serial.println("Not Dense");
