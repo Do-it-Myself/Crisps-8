@@ -82,6 +82,7 @@ public:
     // configure amber light
     pinMode(lightPin, OUTPUT);
     digitalWrite(lightPin, LOW);
+    
   }
 
   void flash() 
