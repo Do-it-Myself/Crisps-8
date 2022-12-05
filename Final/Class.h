@@ -52,7 +52,7 @@ public:
   int currentSpeed;
   bool goingForward;
   double prevFlash = 0;
-  double currFlash;
+  double currFlash = 0;
 
   // constructor
   Motors() = default;
@@ -80,18 +80,19 @@ public:
     Motor->run(RELEASE);
 
     // configure amber light
-    pinMode(lightPin, OUTPUT);
-    digitalWrite(lightPin, LOW);
+    //pinMode(lightPin, OUTPUT);
+    //digitalWrite(lightPin, LOW);
+    
   }
 
   void flash() 
   {
     currFlash = millis();
     Serial.print("prev:");
-    Serial.println(prevFlash);
-    Serial.print("curr:");
+    Serial.print(prevFlash);
+    Serial.print(" curr:");
     Serial.println(currFlash);
-    if (currFlash - prevFlash > 1000) {
+    if (currFlash - prevFlash > 3000) {
       // flash light
       digitalWrite(lightPin, !digitalRead(lightPin));
 
@@ -109,7 +110,7 @@ public:
     currentSpeed = speed;
     
     // turn on light
-    digitalWrite(lightPin, HIGH);
+    //flash();
   }
 
   void backward(int speed)
@@ -121,7 +122,7 @@ public:
     goingForward = false;
 
     // turn on light
-    digitalWrite(lightPin, HIGH);
+    //flash();
   }
 
   void stop()

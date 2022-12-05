@@ -2,9 +2,9 @@
 
 // Tunnel
 #define FAST 255
-#define ROTATION_DELAY 700
+#define ROTATION_DELAY 1500
 #define FORWARD_DELAY 500
-#define WALL_DISTANCE_CM 8.5
+#define WALL_DISTANCE_CM 7.5
 #define WALL_DETECTION_CM 12
 #define Kp 0.2
 #define Ki 0
@@ -15,10 +15,10 @@
 #define DENSE_THRESHOLD 11
 
 // IR
-bool leftPrevIR[3] = {0, 0, 0};
-bool rightPrevIR[3] = {0, 0, 0};
-bool veryLeftPrevIR[3] = {0, 0, 0};
-bool veryRightPrevIR[3] = {0, 0, 0};
+bool leftPrevIR[3] = {1, 1, 1};
+bool rightPrevIR[3] = {1, 1, 1};
+bool veryLeftPrevIR[3] = {1, 1, 1};
+bool veryRightPrevIR[3] = {1, 1, 1};
 
 enum currenttask
 {
@@ -30,7 +30,8 @@ enum currenttask
   lineAfterTunnel,
   rotateLeft,
   rotateRight,
-  blockDropOff
+  blockDropOff,
+  end
 };
 
 enum Block
@@ -56,6 +57,10 @@ public:
   static const int maxSpeed = 255;
   bool onLine;
   bool firstRotation = false;
+
+  // block
+  double robotStartTime = 0;
+
   // tunnel
   float motorRatio = 1;
   unsigned long currentTime, previousTime;
@@ -69,6 +74,8 @@ public:
   double currLeftBranchTime = 0;
   double prevRightBranchTime = 0;
   double currRightBranchTime = 0;
+  double prevFullBranchTime = 0;
+  double currFullBranchTime = 0;
   double branchTimeTol = 1000; // 1 s
 
   int currentTask;
@@ -76,6 +83,13 @@ public:
   bool blockIsDense;
   bool blockData_bool = false;
   bool tunnelData_bool = false;
+  bool blockReleased_bool = false;
+
+  // Motor light
+  double currFlash = 0;
+  double prevFlash = 0;
+  bool isMoving = false;
+  bool lightOn = false;
 
   Crisps() = default;
   Crisps(Ultrasound *ultraBlock, Ultrasound *ultraTunnel) : lineFollower1(LINEFOLLOWER_1), // this is the line follower on the left for following the main line
@@ -112,8 +126,27 @@ public:
     // Task
     currentTask = 0;
     block = 0;
+  }
 
+  // Flash
+  void flash() 
+  {
+    currFlash = millis();
+    if (isMoving && currFlash - prevFlash > 100) {
+      // flash light
+      Serial.println("Flash");
+      if (!lightOn) {
+        lightOn = true;
+        digitalWrite(AMBER_LIGHT, HIGH);
+      }
+      else {
+        lightOn = false;
+        digitalWrite(AMBER_LIGHT, LOW);
+      }
 
+      // reset prevFlash
+      prevFlash = currFlash;
+    }
   }
 
   // Begin
@@ -123,28 +156,34 @@ public:
     grabber.begin();
     fullForward();
     grabber.angle(75);
-    delay(1700);
+    delay(2000);
     grabber.detach();
     Serial.println("Done begin");
+    robotStartTime = millis();
   }
 
   // Pure Motion
   void fullForward()
   {
+    isMoving = true;
     motorL.forward(maxSpeed);
     motorR.forward(maxSpeed);
+    flash();
   }
 
   void fullBackward()
   {
+    isMoving = true;
     motorL.backward(maxSpeed);
     motorR.backward(maxSpeed);
+    flash();
   }
 
   void stop()
   {
     motorL.stop();
     motorR.stop();
+    isMoving = false;
 
     // turn off light
     digitalWrite(AMBER_LIGHT, LOW);
@@ -152,47 +191,78 @@ public:
 
   void clockwise()
   {
+    isMoving = true;
     motorL.forward(maxSpeed);
     motorR.backward(maxSpeed);
+    flash();
   }
 
   void anticlockwise()
   {
+    isMoving = true;
     motorL.backward(maxSpeed);
     motorR.forward(maxSpeed);
+    flash();
+  }
+
+  void rotate180() {
+    isMoving = true;
+    flash();
+    motorL.backward(maxSpeed);
+    motorR.forward(maxSpeed);
+    delay(500);
+    bool leftLine = lineFollower1.getLineData();
+    bool rightLine = lineFollower2.getLineData();
+    do {
+      flash();
+    } while (!leftLine || !rightLine);
+    stop();
   }
 
   void leftAnchoredAnticlockwise()
   {
+    isMoving = true;
     motorL.stop();
     motorR.forward(maxSpeed);
+    flash();
   }
 
   void leftAnchoredClockwise()
   {
+    isMoving = true;
     motorL.stop();
     motorR.backward(maxSpeed);
+    flash();
   }
 
   void rightAnchoredAnticlockwise()
   {
+    isMoving = true;
     motorL.backward(maxSpeed);
     motorR.stop();
+    flash();
   }
 
   void rightAnchoredClockwise()
   {
+    isMoving = true;
     motorL.forward(maxSpeed);
     motorR.stop();
+    flash();
   }
 
   // Line following motion
   void followLine()
   {
+    isMoving = true;
+    flash();
     int step = 60;
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
-    ;
+    bool veryLeftLine = lineFollower3.getLineData();
+    bool veryRightLine = lineFollower4.getLineData();
+
+    
     if (!leftLine || !rightLine)
     {
       onLine = false;
@@ -202,10 +272,12 @@ public:
         if (speedLeft - step < 0)
         {
           motorL.forward(0);
+          motorR.forward(maxSpeed);
         }
         else
         {
           motorL.forward(speedLeft - step);
+          motorR.forward(maxSpeed);
         }
       }
       else if (leftLine && !rightLine)
@@ -214,10 +286,12 @@ public:
         if (speedRight - step < 0)
         {
           motorR.forward(0);
+          motorL.forward(maxSpeed);
         }
         else
         {
           motorR.forward(speedRight - step);
+          motorL.forward(maxSpeed);
         }
       }
       else
@@ -232,7 +306,20 @@ public:
       motorL.forward(maxSpeed);
       motorR.forward(maxSpeed);
     }
+    /*
+    Serial.println("Line");
+    Serial.println(leftLine);
+    Serial.println(rightLine);
+    Serial.println(veryLeftLine);
+    Serial.println(veryRightLine);
+    
+    Serial.println("Motor");
+    Serial.println(motorL.getSpeed());
+    Serial.println(motorR.getSpeed());
+    */
+    
   }
+
 
   // Line branch detection boolean for signals
   bool boolAverage(bool currLine, bool arrLine[3])
@@ -255,22 +342,22 @@ public:
 
   bool hasLeftBranch()
   {
-    bool leftLine = lineFollower1.getLineData();
-    bool rightLine = lineFollower2.getLineData();
+    //bool leftLine = lineFollower1.getLineData();
+    //bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
-    bool veryRightLine = lineFollower4.getLineData();
+    //bool veryRightLine = lineFollower4.getLineData();
 
-    return (!boolAverage(veryLeftLine, veryLeftPrevIR) && boolAverage(veryRightLine, veryRightPrevIR));
+    return (!boolAverage(veryLeftLine, veryLeftPrevIR) /*&& boolAverage(veryRightLine, veryRightPrevIR)*/);
   }
 
   bool hasRightBranch()
   {
-    bool leftLine = lineFollower1.getLineData();
-    bool rightLine = lineFollower2.getLineData();
-    bool veryLeftLine = lineFollower3.getLineData();
+    //bool leftLine = lineFollower1.getLineData();
+    //bool rightLine = lineFollower2.getLineData();
+    //bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
 
-    return (boolAverage(veryLeftLine, veryLeftPrevIR) && !boolAverage(veryRightLine, veryRightPrevIR));
+    return (/*boolAverage(veryLeftLine, veryLeftPrevIR) && */ !boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   bool fullBranch()
@@ -279,11 +366,11 @@ public:
     bool rightLine = lineFollower2.getLineData();
     bool veryLeftLine = lineFollower3.getLineData();
     bool veryRightLine = lineFollower4.getLineData();
-    return (!veryLeftLine && !veryRightLine);
+    return (!boolAverage(veryLeftLine, veryLeftPrevIR) && !boolAverage(veryRightLine, veryRightPrevIR));
   }
 
   bool fullFirstBranch()
-  
+
   {
     bool leftLine = lineFollower1.getLineData();
     bool rightLine = lineFollower2.getLineData();
@@ -305,46 +392,52 @@ public:
 
   void countBranch() // !!!! RESET COUNT TO 0 AFTER EACH LAP
   {
-    if (hasLeftBranch())
+    if (hasRightBranch() && millis() - robotStartTime > 7000)
     {
-      stop();
-      currLeftBranchTime = millis();
-      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol && hasLeftBranch()) // recheck
-      { // enough time has passed -> new branch; <2 condition - in case overcount
-        leftBranch += 1;
-        Serial.print("Left");
-        Serial.println(leftBranch);
-        prevLeftBranchTime = currLeftBranchTime;
-      }
-    }
-    if (hasRightBranch())
-    {
-      stop();
+      //Serial.println("hasRight");
       currRightBranchTime = millis();
-      if (currRightBranchTime - prevRightBranchTime > branchTimeTol && hasRightBranch()) // recheck
-      { // enough time has passed -> new branch; <3 condition - in case overcount
+      if (currRightBranchTime - prevRightBranchTime > branchTimeTol // not same right branch
+          && hasRightBranch() // recheck
+          ) 
+      {                                                                                 
         rightBranch += 1;
         Serial.print("Right");
         Serial.println(rightBranch);
         prevRightBranchTime = currRightBranchTime;
       }
     }
+
+    if (hasLeftBranch() && millis() - robotStartTime > 7000)
+    {
+      //Serial.println("hasLeft");
+      currLeftBranchTime = millis();
+      if (currLeftBranchTime - prevLeftBranchTime > branchTimeTol // not same left branch
+          && hasLeftBranch() // recheck
+          ) 
+      {                                                                              
+        leftBranch += 1;
+        Serial.print("Left");
+        Serial.println(leftBranch);
+        prevLeftBranchTime = currLeftBranchTime;
+      }
+    }
+
   }
 
   // Branches and zones boolean for signals
   bool reachedGreenZone() // less dense
   {
-    return (rightBranch == 1);
+    return (rightBranch == 2);
   }
 
   bool reachedStartEndZone()
   {
-    return (rightBranch == 2);
+    return (rightBranch == 4);
   }
 
   bool reachedRedZone() // more dense
   {
-    return (rightBranch == 3);
+    return (rightBranch == 4);
   }
 
   bool reachedFirstLeftBranch()
@@ -354,7 +447,7 @@ public:
 
   bool reachedSecondLeftBranch()
   {
-    return (leftBranch == 2);
+    return (leftBranch == 3);
   }
 
   // Tunnel - bool might need averaging
@@ -377,13 +470,16 @@ public:
     lastError = error;
     previousTime = currentTime;
 
+  
     Serial.print("Error:");
     Serial.println(error);
+    /*
     Serial.print("Out:");
     Serial.println(out);
     Serial.print("Ratio:");
     Serial.println(motorRatio);
     Serial.println("");
+    */
 
     if (motorRatio > 1)
     {
@@ -404,13 +500,15 @@ public:
 
   void triggerTunnelPID() // triggered when inTunnel, break when outTunnel
   {
-    Serial.println("just trigger");
+    isMoving = true;
+    Serial.println("PID just trigger");
+    delay(500);
     while (inTunnel())
     {
       tunnelPID();
-      Serial.println("pid");
+      Serial.println("PID");
     }
-    Serial.println("after trigger");
+    Serial.println("PID after trigger");
   }
 
   // Block collection
@@ -447,7 +545,7 @@ public:
     { // dense - red
       digitalWrite(RED_LIGHT, HIGH);
       digitalWrite(GREEN_LIGHT, LOW);
-      delay(5000);
+      delay(5000); // change!!
       digitalWrite(RED_LIGHT, LOW);
       Serial.println("Dense");
     }
@@ -455,14 +553,14 @@ public:
     { // not dense - green
       digitalWrite(RED_LIGHT, LOW);
       digitalWrite(GREEN_LIGHT, HIGH);
-      delay(5000);
+      delay(5000); // change!!
       digitalWrite(GREEN_LIGHT, LOW);
       isDense = false;
       Serial.println("Not Dense");
     }
     // grab foam
     grabber.begin();
-    grabber.angle(25);
+    grabber.angle(50);
     delay(500);
     grabber.detach();
     return isDense;
@@ -484,6 +582,8 @@ public:
   // Block release
   void blockBeforeRelease()
   {
+    stop();
+    delay(500);
     // rotate 90 deg clockwise
     rightAnchoredClockwise();
     delay(ROTATION_DELAY);
@@ -491,36 +591,33 @@ public:
     do
     {
       leftLine = lineFollower1.getLineData();
-    } while (!leftLine);
+    } while (leftLine);
     stop();
 
     // forward for certain period
+    /*
     fullForward();
     delay(FORWARD_DELAY);
     stop();
+    */
   }
 
   void blockRelease()
   {
     stop();
-    //grabber.release();
+
+    // release foam
+    grabber.begin();
+    grabber.angle(75);
+    delay(300);
+    grabber.detach();
   }
 
   void blockAfterRelease()
   {
-    // backward for certain period
-    fullBackward();
-    delay(FORWARD_DELAY);
-    stop();
-
     // rotate 90 deg anticlockwise
     rightAnchoredAnticlockwise();
     delay(ROTATION_DELAY);
-    bool rightLine = false;
-    do
-    {
-      rightLine = lineFollower2.getLineData();
-    } while (!rightLine);
     stop();
   }
 
@@ -536,52 +633,70 @@ public:
     while (digitalRead(BUTTON_PIN) == 1)
     {
     }
-    delay(1000);
+    delay(5);
   }
 
   // data collection
   void dataCollection()
   {
-    bool hasLeftBranch_bool = hasLeftBranch(); 
-    bool hasRightBranch_bool = hasRightBranch(); 
-    bool blockDetected_bool = blockDetected(); 
+    // bool hasRightBranch_bool = hasRightBranch();
+    // bool hasLeftBranch_bool = hasLeftBranch();
+    bool blockDetected_bool = blockDetected();
     bool inTunnel_bool = inTunnel();
-    bool fullBranch_bool = fullBranch();
-    bool allBlack_bool = allBlack();
+    bool reachedGreenZone_bool = reachedGreenZone();
+    bool reachedRedZone_bool = reachedRedZone();
     countBranch();
-     
-    if (!blockData_bool && blockDetected_bool && millis() > 15000)
+    //Serial.println(millis() - robotStartTime);
+
+    // detect block
+    if (!blockData_bool && blockDetected_bool && millis() - robotStartTime> 7000)
     { 
       blockData_bool = true;
       currentTask = blockDensity;
       Serial.println("blockDetected_bool");
     }
     
-    /*
-    if (!tunnelData_bool && inTunnel_bool) 
+    // detect tunnel
+    else if (!tunnelData_bool && inTunnel_bool && blockData_bool)
     {
       tunnelData_bool = true;
       currentTask = tunnel;
       Serial.println("inTunnel_bool");
     }
-    */
+
+    // detect green zone for non-dense block
+    else if (!blockReleased_bool && reachedGreenZone_bool && tunnelData_bool && !blockIsDense) 
+    {
+      blockReleased_bool = true;
+      Serial.println("reachedGreenZone_bool");
+      currentTask = blockDropOff;
+    }
+
+    // detect red zone for dense block
+    else if (!blockReleased_bool && reachedRedZone_bool && tunnelData_bool && blockIsDense) 
+    {
+      blockReleased_bool = true;
+      Serial.println("reachedRedZone_bool");
+      currentTask = blockDropOff;
+    }
+  
   }
 
   void task()
   {
     if (block == block1)
     {
-      //Serial.println("Before currentTask");
+      // Serial.println("Before currentTask");
       switch (currentTask)
       {
       case lineBeforeBlock:
         if (!firstRotation && fullFirstBranch())
         {
           // do first rot
-          Serial.println("Trigger");
+          Serial.println("First rot start");
           firstRotation = true;
           rightAnchoredClockwise();
-          delay(2200);
+          delay(1000);
           bool leftLine, rightLine;
           do
           {
@@ -589,7 +704,7 @@ public:
             rightLine = lineFollower2.getLineData();
             delay(5);
           } while (leftLine && rightLine);
-          Serial.println("Triggered");
+          Serial.println("First rot end");
         }
         followLine();
         break;
@@ -606,20 +721,20 @@ public:
         currentTask = lineBlockTunnel;
         break;
       case lineBlockTunnel:
-        //Serial.println("lineBlockTunnel");
+        // Serial.println("lineBlockTunnel");
         followLine();
         break;
       case tunnel:
-        //Serial.println("Tunnel");
-        digitalWrite(RED_LIGHT, HIGH); // temporary
+        Serial.println("Tunnel");
+        digitalWrite(RED_LIGHT, HIGH);   // temporary
         digitalWrite(GREEN_LIGHT, HIGH); // temporary
         triggerTunnelPID();
         followLine();
         currentTask = lineAfterTunnel;
         break;
       case lineAfterTunnel:
-        //Serial.println("lineAfterTunnel");
-        digitalWrite(RED_LIGHT, LOW); // temporary
+        // Serial.println("lineAfterTunnel");
+        digitalWrite(RED_LIGHT, LOW);   // temporary
         digitalWrite(GREEN_LIGHT, LOW); // temporary
         followLine();
         break;
@@ -628,6 +743,32 @@ public:
       case rotateRight:
         break;
       case blockDropOff:
+        blockBeforeRelease();
+        blockRelease();
+        blockAfterRelease();\
+        currentTask = end;
+        break;
+      case end:
+        stop();
+      /*
+        if (blockIsDense) {
+          rotate180();
+          int currentLeftBranch = leftBranch;
+          while (leftBranch == currentLeftBranch) {
+            followLine();
+            dataCollection();
+          }
+          stop();
+        }
+        else {
+          int currentRightBranch = rightBranch;
+          while (rightBranch == currentRightBranch) {
+            followLine();
+            dataCollection();
+          }
+          stop();
+        }
+        */
         break;
       }
     }
